@@ -1,9 +1,12 @@
 const Product = require('../models/Product');
 
-// Get all products
+// Get all products 
 exports.getProducts = async (req, res) => {
     try {
-        const products = await Product.find().lean({ virtuals: true });
+        const products = await Product.find()
+            .sort({ createdAt: -1 })
+            .lean({ virtuals: true });
+
         const formattedProducts = products.map(product => ({
             ...product,
             variants: product.variants.map(variant => ({
@@ -12,6 +15,7 @@ exports.getProducts = async (req, res) => {
                 isOutOfStock: variant.quantity === 0
             }))
         }));
+
         res.status(200).json(formattedProducts);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -27,7 +31,7 @@ exports.createProduct = async (req, res) => {
             description,
             price,
             category,
-            image: image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500',
+            image: image || '',
             variants
         });
         res.status(201).json(product);
