@@ -75,3 +75,15 @@ exports.getCustomerOrders = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Admin: Get all orders from all users
+exports.getAllOrders = async (req, res) => {
+    try {
+        const orders = await Order.find()
+            .populate('user', 'name email phone address')
+            .sort({ createdAt: -1 });
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

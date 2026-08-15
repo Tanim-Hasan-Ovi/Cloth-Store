@@ -67,6 +67,8 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.get('/api/orders/all', authenticate, authorizeAdmin, orderCtrl.getAllOrders);
+
 // Database connection & server start
 const PORT = process.env.PORT || 8000;
 const MONGO_URI = process.env.MONGO_URI;
