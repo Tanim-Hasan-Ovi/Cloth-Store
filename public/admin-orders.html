@@ -158,35 +158,42 @@
     <script>
         const API_BASE = '/api';
 
-        function getStoredUser() {
+        function getStoredAuth() {
+            let token = localStorage.getItem('token') ||
+                localStorage.getItem('adminToken') ||
+                localStorage.getItem('userToken') ||
+                localStorage.getItem('jwt');
+
+            let user = null;
             try {
-                return JSON.parse(localStorage.getItem('user')) || JSON.parse(localStorage.getItem('admin')) || null;
+                user = JSON.parse(localStorage.getItem('user')) ||
+                    JSON.parse(localStorage.getItem('admin')) ||
+                    JSON.parse(localStorage.getItem('adminUser')) || null;
             } catch (e) {
-                return null;
+                user = null;
             }
+
+            return { token, user };
         }
 
-        const currentUser = getStoredUser();
-        const currentToken = localStorage.getItem('token') || localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+        const { token: currentToken, user: currentUser } = getStoredAuth();
         let allOrdersData = [];
         let activeStatusFilter = 'ALL';
 
-        const isAdmin = currentUser && (
-            (currentUser.role && currentUser.role.toLowerCase() === 'admin') ||
-            currentUser.isAdmin === true
-        );
+        // Check if user has admin privileges or at least a token
+        const isAdmin = currentToken && (!currentUser || (
+            (currentUser.role && currentUser.role.toString().toLowerCase() === 'admin') ||
+            currentUser.isAdmin === true ||
+            currentUser.isAdmin === 'true'
+        ));
 
-        if (!currentToken || !isAdmin) {
-            alert('Access denied. Please login as Admin.');
+        if (!currentToken) {
+            alert('Please login as Admin first.');
             window.location.href = '/';
         }
 
         function logout() {
-            localStorage.removeItem('user');
-            localStorage.removeItem('admin');
-            localStorage.removeItem('token');
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('userToken');
+            localStorage.clear();
             window.location.href = '/';
         }
 
@@ -318,7 +325,6 @@
                 return `
                     <div class="bg-white border border-gray-200 rounded-sm shadow-sm hover:border-gray-300 transition duration-200 overflow-hidden">
                         
-                        <!-- CARD HEADER -->
                         <div class="p-4 sm:px-6 bg-gray-50/70 border-b border-gray-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                             <div class="flex items-center space-x-3">
                                 <span class="text-xs font-mono font-bold bg-white px-2.5 py-1 border border-gray-200 rounded-sm text-black">
@@ -329,7 +335,6 @@
                                 <span class="text-xs text-gray-500">${date}</span>
                             </div>
 
-                            <!-- ACTION CONTROLS -->
                             <div class="flex items-center space-x-2 self-end sm:self-center">
                                 <label class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Status:</label>
                                 <select onchange="updateOrderStatus('${order._id}', this.value)" 
@@ -343,10 +348,8 @@
                             </div>
                         </div>
 
-                        <!-- CARD BODY -->
                         <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
                             
-                            <!-- CUSTOMER DETAILS -->
                             <div class="space-y-1.5 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Customer Info</span>
                                 <p class="text-sm font-semibold text-gray-900">${customerName}</p>
@@ -360,7 +363,6 @@
                                 </p>
                             </div>
 
-                            <!-- SHIPPING DESTINATION -->
                             <div class="space-y-1.5 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Delivery Address</span>
                                 <div class="bg-gray-50 p-3 rounded-sm border border-gray-200/60">
@@ -368,7 +370,6 @@
                                 </div>
                             </div>
 
-                            <!-- ORDER ITEMS & TOTAL -->
                             <div class="flex flex-col justify-between">
                                 <div>
                                     <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Order Summary</span>
@@ -425,15 +426,12 @@
                     cache: 'no-store'
                 });
 
-                if (res.status === 401 || res.status === 403) {
-                    alert('Session expired or unauthorized. Please re-login as Admin.');
-                    logout();
-                    return;
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to fetch orders (Status: ' + res.status + ')');
                 }
 
-                if (!res.ok) throw new Error('Failed to fetch orders (Status: ' + res.status + ')');
                 const orders = await res.json();
-
                 allOrdersData = Array.isArray(orders) ? orders : (orders.orders || []);
                 updateStats(allOrdersData);
                 filterAndRenderOrders();
@@ -444,8 +442,6 @@
         }
 
         loadOrders();
-        localStorage.removeItem('aven_cart');
-        localStorage.removeItem('cart');
     </script>
 </body>
 
