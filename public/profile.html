@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — AVEN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen text-gray-900 font-sans">
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-xl font-bold tracking-widest uppercase">AVEN</a>
+            <div class="space-x-4">
+                <a href="/" class="text-xs uppercase tracking-wider border-b border-black pb-0.5">Shop</a>
+                <button onclick="logout()"
+                    class="text-xs uppercase bg-black text-white px-3 py-1.5 hover:bg-gray-800">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-6 space-y-10">
+        <div class="border-b pb-4">
+            <h2 class="text-2xl font-light uppercase tracking-widest">My Account</h2>
+            <p class="text-xs text-gray-500 mt-1" id="user-welcome-email"></p>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div class="bg-white p-6 border border-gray-200">
+            <h3 class="text-sm font-semibold uppercase tracking-wider mb-4">Edit Profile</h3>
+            <form id="edit-profile-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="prof-name" placeholder="Full Name" required
+                        class="border p-2 text-sm w-full">
+                    <input type="text" id="prof-phone" placeholder="Phone Number" class="border p-2 text-sm w-full">
+                </div>
+                <input type="text" id="prof-street" placeholder="Street Address" class="border p-2 text-sm w-full">
+                <div class="grid grid-cols-3 gap-4">
+                    <input type="text" id="prof-city" placeholder="City" class="border p-2 text-sm">
+                    <input type="text" id="prof-postal" placeholder="Postal Code" class="border p-2 text-sm">
+                    <input type="text" id="prof-country" placeholder="Country" class="border p-2 text-sm"
+                        value="Bangladesh">
+                </div>
+                <button type="submit"
+                    class="bg-black text-white text-xs uppercase px-6 py-2.5 tracking-widest hover:bg-gray-800">Save
+                    Profile</button>
+            </form>
+        </div>
+
+        <!-- My Orders -->
+        <div class="bg-white p-6 border border-gray-200">
+            <h3 class="text-sm font-semibold uppercase tracking-wider mb-4">Order History</h3>
+            <div id="user-order-list" class="space-y-4"></div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = JSON.parse(localStorage.getItem('user'));
+        const currentToken = localStorage.getItem('token');
+
+        if (!currentUser || !currentToken) {
+            alert('Please login first.');
+            window.location.href = '/';
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        function loadUserProfile() {
+            document.getElementById('user-welcome-email').innerText = `Signed in as ${currentUser.email}`;
+            document.getElementById('prof-name').value = currentUser.name || '';
+            document.getElementById('prof-phone').value = currentUser.phone || '';
+            document.getElementById('prof-street').value = currentUser.address?.street || '';
+            document.getElementById('prof-city').value = currentUser.address?.city || '';
+            document.getElementById('prof-postal').value = currentUser.address?.postalCode || '';
+            document.getElementById('prof-country').value = currentUser.address?.country || 'Bangladesh';
+        }
+
+        document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('prof-name').value,
+                phone: document.getElementById('prof-phone').value,
+                address: {
+                    street: document.getElementById('prof-street').value,
+                    city: document.getElementById('prof-city').value,
+                    postalCode: document.getElementById('prof-postal').value,
+                    country: document.getElementById('prof-country').value,
+                }
+            };
+
+            const res = await fetch(`${API_BASE}/auth/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                currentUser = await res.json();
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                alert('Profile updated successfully!');
+            }
+        });
+
+        async function loadUserOrders() {
+            const container = document.getElementById('user-order-list');
+            const res = await fetch(`${API_BASE}/orders/my-orders`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            const orders = await res.json();
+
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400">No orders found.</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map(o => `
+        <div class="border p-4 text-xs space-y-1.5">
+          <div class="flex justify-between font-semibold">
+            <span>Order #${o._id.slice(-6).toUpperCase()}</span>
+            <span class="uppercase text-indigo-600">${o.status}</span>
+          </div>
+          <p class="text-gray-500">Items: ${o.items.map(i => `${i.title} (${i.size}) x${i.quantity}`).join(', ')}</p>
+          <p class="font-medium text-black">Total: ৳ ${o.totalAmount}</p>
+        </div>
+      `).join('');
+        }
+
+        loadUserProfile();
+        loadUserOrders();
+    </script>
+</body>
+
+</html>
