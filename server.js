@@ -158,4 +158,45 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
+// Database Connection for Serverless
+const MONGO_URI = process.env.MONGO_URI;
+let cachedDb = null;
+
+const connectDB = async () => {
+    if (cachedDb && mongoose.connection.readyState === 1) {
+        return;
+    }
+    if (!MONGO_URI) {
+        console.error('MONGO_URI is missing!');
+        return;
+    }
+    try {
+        const db = await mongoose.connect(MONGO_URI, {
+            bufferCommands: false,
+            serverSelectionTimeoutMS: 5000,
+        });
+        cachedDb = db;
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+    }
+};
+
+// Ensure DB connected before processing API requests
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+    } catch (e) {
+        console.error(e);
+    }
+    next();
+});
+
+// For local development only
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 8000;
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
+
+module.exports = app;
+
 module.exports = app;
