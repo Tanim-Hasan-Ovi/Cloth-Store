@@ -2,7 +2,13 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
+// Customer: Create order
 exports.createOrder = async (req, res) => {
+    // Check if the user is an admin
+    if (req.user && req.user.role === 'admin') {
+        return res.status(403).json({ message: 'Admins are not allowed to place orders.' });
+    }
+
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -67,6 +73,7 @@ exports.createOrder = async (req, res) => {
     }
 };
 
+// Customer: Get my orders
 exports.getCustomerOrders = async (req, res) => {
     try {
         const orders = await Order.find({ customer: req.user._id }).sort({ createdAt: -1 });
@@ -80,9 +87,35 @@ exports.getCustomerOrders = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate('user', 'name email phone address')
+            .populate('customer', 'name email phone address')
             .sort({ createdAt: -1 });
         res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Admin: Update Order Status
+exports.updateOrderStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Invalid order status' });
+        }
+
+        const order = await Order.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        );
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        res.status(200).json(order);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

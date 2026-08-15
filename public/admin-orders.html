@@ -8,10 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-50 min-h-screen text-gray-900 font-sans flex flex-col justify-between">
+<body class="bg-[#fcfcfc] min-h-screen text-gray-900 font-sans flex flex-col justify-between antialiased">
 
     <!-- ADMIN HEADER -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
 
@@ -19,21 +19,21 @@
                 <div class="flex items-center space-x-3">
                     <a href="/" class="text-xl font-bold tracking-widest uppercase text-black">AVEN</a>
                     <span
-                        class="bg-black text-white text-[10px] uppercase tracking-widest px-2 py-0.5 font-medium rounded-sm">Admin</span>
+                        class="bg-black text-white text-[10px] uppercase tracking-widest px-2.5 py-0.5 font-medium rounded-full">Admin</span>
                 </div>
 
                 <!-- Center Nav Links -->
                 <nav class="flex space-x-8">
                     <a href="/admin-orders.html"
-                        class="text-sm font-semibold uppercase tracking-wider text-black border-b-2 border-black pb-1">
+                        class="text-xs uppercase font-semibold tracking-widest text-black border-b-2 border-black pb-1">
                         Customer Orders
                     </a>
                     <a href="/admin.html"
-                        class="text-sm font-medium uppercase tracking-wider text-gray-500 hover:text-black transition">
+                        class="text-xs uppercase font-medium tracking-widest text-gray-500 hover:text-black transition">
                         Add Product
                     </a>
                     <a href="/admin-manage.html"
-                        class="text-sm font-medium uppercase tracking-wider text-gray-500 hover:text-black transition">
+                        class="text-xs uppercase font-medium tracking-widest text-gray-500 hover:text-black transition">
                         Manage Products
                     </a>
                 </nav>
@@ -41,30 +41,95 @@
                 <!-- Right Action Links -->
                 <div class="flex items-center space-x-6">
                     <a href="/"
-                        class="text-xs uppercase tracking-wider text-gray-700 hover:text-black border-b border-gray-400 pb-0.5 transition">View
-                        Shop</a>
+                        class="text-xs uppercase tracking-widest text-gray-700 hover:text-black transition">Storefront</a>
                     <button onclick="logout()"
-                        class="text-xs uppercase bg-black text-white px-4 py-2 hover:bg-gray-800 transition">Logout</button>
+                        class="text-xs uppercase tracking-widest bg-black text-white px-4 py-2 hover:bg-neutral-800 transition font-medium">Logout</button>
                 </div>
 
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto p-6 space-y-6 flex-grow w-full">
-        <div class="flex justify-between items-center border-b pb-3">
-            <div>
-                <h2 class="text-xl font-light uppercase tracking-widest text-black">Customer Orders</h2>
-                <p class="text-xs text-gray-500 mt-1">Real-time list of all placed orders, items, and delivery details.
-                </p>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 flex-grow w-full">
+
+        <!-- HEADER TITLE & LIVE STATS CARDS -->
+        <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b border-gray-200 pb-5">
+                <div>
+                    <h1 class="text-2xl font-light tracking-tight text-gray-900 uppercase">Customer Orders Overview</h1>
+                    <p class="text-xs text-gray-500 mt-1">Monitor real-time customer purchases, dispatch fulfillment,
+                        and delivery pipelines.</p>
+                </div>
+                <button onclick="loadOrders()"
+                    class="self-start sm:self-auto inline-flex items-center space-x-1.5 text-xs font-semibold uppercase tracking-wider text-black bg-white border border-gray-300 px-3.5 py-2 hover:bg-gray-50 transition shadow-sm rounded-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Refresh</span>
+                </button>
             </div>
-            <button onclick="loadOrders()"
-                class="text-xs uppercase border-b border-black pb-0.5 hover:text-gray-500">Refresh Orders</button>
+
+            <!-- ANALYTICS KPI WIDGETS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white border border-gray-200 p-5 rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <span class="text-[10px] uppercase font-semibold tracking-widest text-gray-400">Total Orders</span>
+                    <p id="stat-total-orders" class="text-2xl font-bold text-black mt-2">0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-5 rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <span class="text-[10px] uppercase font-semibold tracking-widest text-gray-400">Total Revenue</span>
+                    <p id="stat-total-rev" class="text-2xl font-bold text-black mt-2">৳ 0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-5 rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <span class="text-[10px] uppercase font-semibold tracking-widest text-amber-600">Pending /
+                        Processing</span>
+                    <p id="stat-pending" class="text-2xl font-bold text-amber-600 mt-2">0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-5 rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                    <span class="text-[10px] uppercase font-semibold tracking-widest text-emerald-600">Completed
+                        Orders</span>
+                    <p id="stat-delivered" class="text-2xl font-bold text-emerald-600 mt-2">0</p>
+                </div>
+            </div>
         </div>
 
-        <div class="bg-white border border-gray-200 shadow-sm rounded-sm overflow-hidden">
-            <div id="orders-container" class="divide-y divide-gray-200">
-                <p class="text-xs text-gray-400 p-6 text-center">Loading orders...</p>
+        <!-- SEARCH & STATUS FILTER BAR -->
+        <div
+            class="flex flex-col sm:flex-row justify-between gap-3 items-center bg-white p-3 border border-gray-200 rounded-sm">
+            <div class="relative w-full sm:w-80">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </span>
+                <input type="text" id="order-search" oninput="filterAndRenderOrders()"
+                    placeholder="Search by Order ID, Name, or Phone..."
+                    class="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-black transition">
+            </div>
+
+            <div class="flex items-center space-x-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                <span
+                    class="text-[11px] uppercase tracking-wider text-gray-400 font-medium whitespace-nowrap">Filter:</span>
+                <div class="flex space-x-1.5" id="filter-tabs">
+                    <button onclick="setStatusFilter('ALL')"
+                        class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-semibold bg-black text-white transition">All</button>
+                    <button onclick="setStatusFilter('Pending')"
+                        class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition">Pending</button>
+                    <button onclick="setStatusFilter('Processing')"
+                        class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition">Processing</button>
+                    <button onclick="setStatusFilter('Shipped')"
+                        class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition">Shipped</button>
+                    <button onclick="setStatusFilter('Delivered')"
+                        class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition">Delivered</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDERS LIST -->
+        <div id="orders-container" class="space-y-4">
+            <div class="bg-white border border-gray-200 p-12 text-center rounded-sm">
+                <p class="text-xs uppercase tracking-widest text-gray-400">Loading order records...</p>
             </div>
         </div>
     </main>
@@ -88,8 +153,10 @@
         const API_BASE = '/api';
         const currentUser = JSON.parse(localStorage.getItem('user'));
         const currentToken = localStorage.getItem('token');
+        let allOrdersData = [];
+        let activeStatusFilter = 'ALL';
 
-        // Admin Auth Guard
+        // Auth Guard
         if (!currentUser || currentUser.role !== 'admin' || !currentToken) {
             alert('Access denied. Please login as Admin.');
             window.location.href = '/';
@@ -101,6 +168,214 @@
             window.location.href = '/';
         }
 
+        function getStatusPill(status) {
+            switch (status) {
+                case 'Processing':
+                    return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-amber-500 animate-pulse"></span> In Processing
+                    </span>`;
+                case 'Shipped':
+                    return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-blue-500"></span> Shipped to Courier
+                    </span>`;
+                case 'Delivered':
+                    return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500"></span> Delivered
+                    </span>`;
+                case 'Cancelled':
+                    return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-rose-500"></span> Cancelled
+                    </span>`;
+                default:
+                    return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-300">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-gray-400"></span> Pending
+                    </span>`;
+            }
+        }
+
+        function setStatusFilter(status) {
+            activeStatusFilter = status;
+            document.querySelectorAll('#filter-tabs button').forEach(btn => {
+                const isMatch = (status === 'ALL' && btn.innerText === 'ALL') || btn.innerText.toUpperCase() === status.toUpperCase();
+                btn.className = isMatch
+                    ? 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-semibold bg-black text-white transition'
+                    : 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition';
+            });
+            filterAndRenderOrders();
+        }
+
+        function updateStats(orders) {
+            const totalOrders = orders.length;
+            const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+            const pendingCount = orders.filter(o => !o.status || o.status === 'Pending' || o.status === 'Processing').length;
+            const deliveredCount = orders.filter(o => o.status === 'Delivered').length;
+
+            document.getElementById('stat-total-orders').innerText = totalOrders;
+            document.getElementById('stat-total-rev').innerText = `৳ ${totalRevenue.toLocaleString()}`;
+            document.getElementById('stat-pending').innerText = pendingCount;
+            document.getElementById('stat-delivered').innerText = deliveredCount;
+        }
+
+        function filterAndRenderOrders() {
+            const searchQuery = (document.getElementById('order-search').value || '').toLowerCase().trim();
+            const container = document.getElementById('orders-container');
+
+            let filtered = allOrdersData.filter(order => {
+                const matchesStatus = activeStatusFilter === 'ALL' || (order.status || 'Pending').toUpperCase() === activeStatusFilter.toUpperCase();
+
+                const cust = order.customer || order.user || {};
+                const name = (cust.name || '').toLowerCase();
+                const phone = (cust.phone || order.shippingAddress?.phone || '').toLowerCase();
+                const orderId = (order._id || '').toLowerCase();
+
+                const matchesSearch = !searchQuery || name.includes(searchQuery) || phone.includes(searchQuery) || orderId.includes(searchQuery);
+
+                return matchesStatus && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white border border-gray-200 p-12 text-center rounded-sm">
+                        <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        <p class="text-xs uppercase tracking-widest text-gray-500 font-medium">No matching orders found</p>
+                        <p class="text-[11px] text-gray-400 mt-1">Try resetting your filter or search query.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                }) : 'N/A';
+
+                const cust = (typeof order.customer === 'object' && order.customer !== null) ? order.customer : (order.user || {});
+                const customerName = cust.name || 'Anonymous Customer';
+                const customerEmail = cust.email || 'N/A';
+                const customerPhone = cust.phone || order.shippingAddress?.phone || 'Not set in profile';
+
+                const items = Array.isArray(order.items) ? order.items : [];
+                const itemsList = items.map(item => `
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 text-xs">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-7 h-7 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center font-bold text-[10px] text-black">
+                                ${item.size || 'M'}
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">${item.title || 'Apparel Item'}</p>
+                                <p class="text-[11px] text-gray-400">Unit Price: ৳${item.price || 0}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-semibold text-black">Qty: ${item.quantity || 1}</span>
+                            <span class="text-xs text-gray-500 block">৳${(item.price || 0) * (item.quantity || 1)}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                const addr = order.shippingAddress || cust.address || {};
+                const fullAddress = [addr.street, addr.city, addr.postalCode, addr.country].filter(Boolean).join(', ') || 'No shipping address provided';
+                const currentStatus = order.status || 'Pending';
+
+                return `
+                    <div class="bg-white border border-gray-200 rounded-sm shadow-sm hover:border-gray-300 transition duration-200 overflow-hidden">
+                        
+                        <!-- CARD HEADER -->
+                        <div class="p-4 sm:px-6 bg-gray-50/70 border-b border-gray-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xs font-mono font-bold bg-white px-2.5 py-1 border border-gray-200 rounded-sm text-black">
+                                    #${(order._id || '').slice(-6).toUpperCase()}
+                                </span>
+                                <div>${getStatusPill(currentStatus)}</div>
+                                <span class="text-[11px] text-gray-400 hidden sm:inline">•</span>
+                                <span class="text-xs text-gray-500">${date}</span>
+                            </div>
+
+                            <!-- ACTION CONTROLS -->
+                            <div class="flex items-center space-x-2 self-end sm:self-center">
+                                <label class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Status:</label>
+                                <select onchange="updateOrderStatus('${order._id}', this.value)" 
+                                    class="text-xs font-medium border border-gray-300 bg-white px-3 py-1.5 rounded-sm focus:outline-none focus:ring-1 focus:ring-black cursor-pointer shadow-sm">
+                                    <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>In Processing</option>
+                                    <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped to Courier</option>
+                                    <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- CARD BODY -->
+                        <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            <!-- CUSTOMER DETAILS -->
+                            <div class="space-y-1.5 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Customer Info</span>
+                                <p class="text-sm font-semibold text-gray-900">${customerName}</p>
+                                <p class="text-xs text-gray-500 flex items-center space-x-1.5">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                    <span>${customerEmail}</span>
+                                </p>
+                                <p class="text-xs text-gray-700 flex items-center space-x-1.5 font-medium">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    <span>${customerPhone}</span>
+                                </p>
+                            </div>
+
+                            <!-- SHIPPING DESTINATION -->
+                            <div class="space-y-1.5 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Delivery Address</span>
+                                <div class="bg-gray-50 p-3 rounded-sm border border-gray-200/60">
+                                    <p class="text-xs text-gray-700 leading-relaxed">${fullAddress}</p>
+                                </div>
+                            </div>
+
+                            <!-- ORDER ITEMS & TOTAL -->
+                            <div class="flex flex-col justify-between">
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-2">Order Summary</span>
+                                    <div class="divide-y divide-gray-100">${itemsList}</div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-baseline">
+                                    <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Bill</span>
+                                    <span class="text-lg font-bold text-black">৳ ${order.totalAmount || 0}</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const res = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (res.ok) {
+                    const idx = allOrdersData.findIndex(o => o._id === orderId);
+                    if (idx !== -1) {
+                        allOrdersData[idx].status = newStatus;
+                        updateStats(allOrdersData);
+                        filterAndRenderOrders();
+                    }
+                } else {
+                    const err = await res.json();
+                    alert(err.message || 'Failed to update order status');
+                }
+            } catch (err) {
+                alert('Network error while updating status');
+            }
+        }
+
         async function loadOrders() {
             const container = document.getElementById('orders-container');
             try {
@@ -110,78 +385,15 @@
                     }
                 });
 
-                if (!res.ok) throw new Error('Failed to fetch orders');
+                if (!res.ok) throw new Error('Failed to fetch orders (Status: ' + res.status + ')');
                 const orders = await res.json();
 
-                if (!orders || orders.length === 0) {
-                    container.innerHTML = '<p class="text-xs text-gray-400 p-8 text-center">No customer orders placed yet.</p>';
-                    return;
-                }
-
-                container.innerHTML = orders.map(order => {
-                    const date = new Date(order.createdAt).toLocaleDateString('en-GB', {
-                        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                    });
-
-                    const itemsList = order.items.map(item => `
-            <div class="flex justify-between items-center text-xs py-1 border-b border-gray-100 last:border-0">
-              <div class="font-medium text-black">
-                ${item.title || 'Apparel Item'} 
-                <span class="text-gray-500 font-normal">(${item.size})</span>
-              </div>
-              <div class="text-gray-600">
-                Qty: ${item.quantity} × ৳${item.price} = <span class="font-semibold text-black">৳${item.price * item.quantity}</span>
-              </div>
-            </div>
-          `).join('');
-
-                    const addr = order.shippingAddress || {};
-                    const fullAddress = [addr.street, addr.city, addr.postalCode, addr.country].filter(Boolean).join(', ') || 'Address not provided';
-
-                    return `
-            <div class="p-6 space-y-4 hover:bg-gray-50/50 transition">
-              <!-- Order Top Bar -->
-              <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-gray-100 pb-3">
-                <div class="flex items-center space-x-3">
-                  <span class="font-bold text-sm text-black">Order #${order._id.slice(-6).toUpperCase()}</span>
-                  <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
-                    ${order.status || 'Pending'}
-                  </span>
-                </div>
-                <span class="text-xs text-gray-400">${date}</span>
-              </div>
-
-              <!-- Customer & Shipping Information -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-gray-50 p-3 rounded-sm">
-                <div>
-                  <span class="text-gray-400 uppercase tracking-wider block font-medium">Customer Details</span>
-                  <p class="font-semibold text-black mt-0.5">${order.user?.name || 'Customer'}</p>
-                  <p class="text-gray-600">${order.user?.email || 'N/A'}</p>
-                  <p class="text-gray-600">Phone: ${order.user?.phone || 'Not provided'}</p>
-                </div>
-                <div>
-                  <span class="text-gray-400 uppercase tracking-wider block font-medium">Delivery Address</span>
-                  <p class="text-gray-700 mt-0.5 leading-relaxed">${fullAddress}</p>
-                </div>
-              </div>
-
-              <!-- Ordered Items Table -->
-              <div class="border border-gray-100 p-3 rounded-sm bg-white space-y-1">
-                <span class="text-[11px] text-gray-400 uppercase tracking-wider block mb-2 font-medium">Ordered Products</span>
-                ${itemsList}
-              </div>
-
-              <!-- Total Amount -->
-              <div class="flex justify-between items-center pt-2">
-                <span class="text-xs text-gray-500 uppercase tracking-wider">Total Bill</span>
-                <span class="text-base font-bold text-black">৳ ${order.totalAmount}</span>
-              </div>
-            </div>
-          `;
-                }).join('');
+                allOrdersData = Array.isArray(orders) ? orders : [];
+                updateStats(allOrdersData);
+                filterAndRenderOrders();
 
             } catch (err) {
-                container.innerHTML = `<p class="text-xs text-red-500 p-6 text-center">Error: ${err.message}</p>`;
+                container.innerHTML = `<div class="p-6 bg-red-50 text-red-600 text-xs rounded-sm border border-red-200 text-center">Failed to load orders: ${err.message}</div>`;
             }
         }
 

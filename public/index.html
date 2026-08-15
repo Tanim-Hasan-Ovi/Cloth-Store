@@ -144,6 +144,20 @@
         </div>
     </div>
 
+    <!-- LUXURY TOAST NOTIFICATION POPUP -->
+    <div id="toast-modal"
+        class="fixed top-6 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 ease-out max-w-sm w-full">
+        <div class="bg-black text-white p-4 shadow-2xl border border-gray-800 flex items-start space-x-3 rounded-sm">
+            <div class="flex-shrink-0 mt-0.5" id="toast-icon"></div>
+            <div class="flex-1">
+                <h4 id="toast-title" class="text-xs uppercase tracking-widest font-semibold text-white">Notice</h4>
+                <p id="toast-message" class="text-xs text-gray-300 mt-0.5 leading-relaxed"></p>
+            </div>
+            <button onclick="hideToast()"
+                class="text-gray-500 hover:text-white transition text-sm leading-none">&times;</button>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer class="bg-black text-white mt-16 border-t border-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -211,6 +225,7 @@
         let currentCategory = 'All';
         let selectedModalSize = '';
         let selectedModalProductId = '';
+        let toastTimeout;
 
         function updateAuthIndicator() {
             const dot = document.getElementById('auth-status-dot');
@@ -220,6 +235,36 @@
 
         function toggleModal(show) { document.getElementById('auth-modal').classList.toggle('hidden', !show); }
         function toggleImageModal(show) { document.getElementById('image-modal').classList.toggle('hidden', !show); }
+
+        // TOAST NOTIFICATION LOGIC
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast-modal');
+            const title = document.getElementById('toast-title');
+            const msg = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+
+            msg.innerText = message;
+
+            if (type === 'error') {
+                title.innerText = 'Access Restricted';
+                icon.innerHTML = `<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+            } else {
+                title.innerText = 'Success';
+                icon.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+            }
+
+            toast.classList.remove('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(hideToast, 4000);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast-modal');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+        }
 
         function switchAuthMode(mode) {
             authMode = mode;
@@ -371,7 +416,7 @@
                 toggleModal(false);
                 handleAccountClick();
             } else {
-                alert(data.message || 'Authentication error');
+                showToast(data.message || 'Authentication error', 'error');
             }
         });
 
@@ -381,31 +426,43 @@
             renderProducts();
         }
 
+        // SINGLE CLEANED ORDER FUNCTION
         async function orderSingleProduct(productId, size) {
             if (!currentUser || !currentToken) {
-                alert('Please login first to place an order.');
+                showToast('Please login first to place an order.', 'error');
                 toggleModal(true);
                 return;
             }
 
-            const res = await fetch(`${API_BASE}/orders`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentToken}`
-                },
-                body: JSON.stringify({
-                    items: [{ productId, size, quantity: 1 }],
-                    shippingAddress: currentUser.address
-                })
-            });
+            // Block admin from placing orders
+            if (currentUser.role === 'admin') {
+                showToast('Admins are not allowed to place orders.', 'error');
+                return;
+            }
 
-            if (res.ok) {
-                alert('Order placed successfully!');
-                loadProducts();
-            } else {
-                const err = await res.json();
-                alert(err.message || 'Order failed');
+            try {
+                const res = await fetch(`${API_BASE}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({
+                        items: [{ productId, size, quantity: 1 }],
+                        shippingAddress: currentUser.address
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast('Order placed successfully!', 'success');
+                    loadProducts();
+                } else {
+                    showToast(data.message || 'Order failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error, please try again.', 'error');
             }
         }
 

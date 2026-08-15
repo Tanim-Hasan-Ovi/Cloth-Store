@@ -69,6 +69,8 @@ app.get('/', (req, res) => {
 
 app.get('/api/orders/all', authenticate, authorizeAdmin, orderCtrl.getAllOrders);
 
+app.put('/api/orders/:id/status', authenticate, authorizeAdmin, orderCtrl.updateOrderStatus);
+
 // Database connection & server start
 const PORT = process.env.PORT || 8000;
 const MONGO_URI = process.env.MONGO_URI;
