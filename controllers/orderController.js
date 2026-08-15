@@ -92,12 +92,16 @@ exports.getCustomerOrders = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate('customer', 'name email phone address')
-            .populate('user', 'name email phone address')
-            .sort({ createdAt: -1 });
+            .populate({
+                path: 'customer',
+                select: 'name email phone address'
+            })
+            .sort({ createdAt: -1 })
+            .lean();
 
         return res.status(200).json(orders);
     } catch (error) {
+        console.error("Error fetching orders:", error);
         return res.status(500).json({ message: error.message });
     }
 };
