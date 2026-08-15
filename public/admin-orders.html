@@ -157,20 +157,36 @@
 
     <script>
         const API_BASE = '/api';
-        const currentUser = JSON.parse(localStorage.getItem('user'));
-        const currentToken = localStorage.getItem('token');
+
+        function getStoredUser() {
+            try {
+                return JSON.parse(localStorage.getItem('user')) || JSON.parse(localStorage.getItem('admin')) || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        const currentUser = getStoredUser();
+        const currentToken = localStorage.getItem('token') || localStorage.getItem('adminToken') || localStorage.getItem('userToken');
         let allOrdersData = [];
         let activeStatusFilter = 'ALL';
 
-        // Auth Guard
-        if (!currentUser || currentUser.role !== 'admin' || !currentToken) {
+        const isAdmin = currentUser && (
+            (currentUser.role && currentUser.role.toLowerCase() === 'admin') ||
+            currentUser.isAdmin === true
+        );
+
+        if (!currentToken || !isAdmin) {
             alert('Access denied. Please login as Admin.');
             window.location.href = '/';
         }
 
         function logout() {
             localStorage.removeItem('user');
+            localStorage.removeItem('admin');
             localStorage.removeItem('token');
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('userToken');
             window.location.href = '/';
         }
 
@@ -403,15 +419,22 @@
             try {
                 const res = await fetch(`${API_BASE}/orders/all?t=${Date.now()}`, {
                     headers: {
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${currentToken}`
                     },
                     cache: 'no-store'
                 });
 
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or unauthorized. Please re-login as Admin.');
+                    logout();
+                    return;
+                }
+
                 if (!res.ok) throw new Error('Failed to fetch orders (Status: ' + res.status + ')');
                 const orders = await res.json();
 
-                allOrdersData = Array.isArray(orders) ? orders : [];
+                allOrdersData = Array.isArray(orders) ? orders : (orders.orders || []);
                 updateStats(allOrdersData);
                 filterAndRenderOrders();
 
