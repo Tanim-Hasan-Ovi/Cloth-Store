@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Orders — Admin AVEN</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Favicon / Tab Logo -->
+    <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
 <body class="bg-[#fcfcfc] min-h-screen text-gray-900 font-sans flex flex-col justify-between antialiased">
@@ -41,9 +44,10 @@
                 <!-- Right Action Links -->
                 <div class="flex items-center space-x-6">
                     <a href="/"
-                        class="text-xs uppercase tracking-widest text-gray-700 hover:text-black transition">Storefront</a>
+                        class="text-xs uppercase tracking-wider text-gray-700 hover:text-black border-b border-gray-400 pb-0.5 transition">View
+                        Shop</a>
                     <button onclick="logout()"
-                        class="text-xs uppercase tracking-widest bg-black text-white px-4 py-2 hover:bg-neutral-800 transition font-medium">Logout</button>
+                        class="text-xs uppercase bg-black text-white px-4 py-2 hover:bg-gray-800 transition">Logout</button>
                 </div>
 
             </div>
@@ -398,6 +402,8 @@
         }
 
         loadOrders();
+        localStorage.removeItem('aven_cart');
+        localStorage.removeItem('cart');
     </script>
 </body>
 

@@ -5,11 +5,19 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const jwt = require('jsonwebtoken'); // Added missing jwt
 
-const { authenticate, authorizeAdmin } = require('./middleware/auth');
+// Middlewares
+const authMiddleware = require('./middleware/auth');
+// Handle both naming styles (protect/authenticate and adminOnly/authorizeAdmin)
+const authenticate = authMiddleware.authenticate || authMiddleware.protect;
+const authorizeAdmin = authMiddleware.authorizeAdmin || authMiddleware.adminOnly;
+
+// Controllers
 const authCtrl = require('./controllers/authController');
 const prodCtrl = require('./controllers/productController');
 const orderCtrl = require('./controllers/orderController');
+const cartCtrl = require('./controllers/cartController');
 
 const app = express();
 app.use(cors());
@@ -46,32 +54,79 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     res.status(200).json({ imageUrl });
 });
 
-// Authentication routes
+// Authentication Routes
 app.post('/api/auth/register', authCtrl.register);
 app.post('/api/auth/login', authCtrl.login);
+app.post('/api/auth/google', authCtrl.googleAuth);
 app.put('/api/auth/profile', authenticate, authCtrl.updateProfile);
 
-// Product routes
+// Product Routes
 app.get('/api/products', prodCtrl.getProducts);
 app.post('/api/products', prodCtrl.createProduct);
 app.put('/api/products/:id', prodCtrl.updateProduct);
 app.delete('/api/products/:id', prodCtrl.deleteProduct);
 app.patch('/api/products/:productId/stock', prodCtrl.updateVariantStock);
 
-// Order routes
+// Order Routes
 app.post('/api/orders', authenticate, orderCtrl.createOrder);
 app.get('/api/orders/my-orders', authenticate, orderCtrl.getCustomerOrders);
+app.get('/api/orders/all', authenticate, authorizeAdmin, orderCtrl.getAllOrders);
+app.put('/api/orders/:id/status', authenticate, authorizeAdmin, orderCtrl.updateOrderStatus);
 
-// Frontend fallback route
+// Optional Auth Middleware (Allows both logged-in and guest users)
+const optionalAuth = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+            req.user = {
+                _id: decoded.id || decoded._id,
+                id: decoded.id || decoded._id,
+                role: decoded.role,
+                isAdmin: decoded.isAdmin
+            };
+            req.isAdmin = decoded.isAdmin || decoded.role === 'admin';
+        } catch (err) { }
+    }
+    next();
+};
+
+// Cart Routes
+app.get('/api/cart', optionalAuth, cartCtrl.getUserCart);
+app.post('/api/cart/add', optionalAuth, cartCtrl.addToCart);
+app.patch('/api/cart/:reservationId', optionalAuth, cartCtrl.updateCartItem); // Ensure this line exists
+app.delete('/api/cart/:reservationId', optionalAuth, cartCtrl.removeFromCart);
+app.delete('/api/cart/clear-all', optionalAuth, cartCtrl.clearAllCart);
+
+// Frontend Fallback Route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/api/orders/all', authenticate, authorizeAdmin, orderCtrl.getAllOrders);
+// Public Config Route for Frontend
+app.get('/api/config/google-client-id', (req, res) => {
+    res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
+});
 
-app.put('/api/orders/:id/status', authenticate, authorizeAdmin, orderCtrl.updateOrderStatus);
+app.delete('/api/cart/clear-all', authenticate, cartCtrl.clearAllCart);
 
-// Database connection & server start
+
+app.patch('/api/cart/:reservationId', optionalAuth, cartCtrl.updateCartItem);
+
+app.patch('/api/orders/:orderId/cancel', authenticate, orderCtrl.cancelUserOrder);
+
+
+// Disable 304 Caching for all API routes
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+});
+
+
+// Database Connection & Server Start
 const PORT = process.env.PORT || 8000;
 const MONGO_URI = process.env.MONGO_URI;
 

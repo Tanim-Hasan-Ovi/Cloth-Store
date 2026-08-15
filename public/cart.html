@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Bag — AVEN</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen text-gray-900 font-sans flex flex-col justify-between antialiased">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="text-2xl font-bold tracking-widest text-black uppercase">AVEN</a>
+                    <span class="text-gray-300">/</span>
+                    <span class="text-xs uppercase tracking-widest text-gray-500 font-medium">Bag</span>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-6">
+                    <a href="/"
+                        class="text-xs uppercase tracking-wider text-gray-700 hover:text-black border-b border-gray-400 pb-0.5 transition">Continue
+                        Shopping</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CART MAIN -->
+    <main class="max-w-6xl mx-auto p-6 flex-grow w-full space-y-8">
+
+        <div class="border-b border-gray-200 pb-4">
+            <h1 class="text-2xl font-light tracking-wide text-black uppercase">Your Shopping Bag</h1>
+            <p id="cart-item-count" class="text-xs text-gray-500 mt-1">Review your reserved garments and checkout before
+                stock holds expire.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- CART ITEMS LIST -->
+            <div class="lg:col-span-2 space-y-4">
+                <div id="cart-container"
+                    class="bg-white border border-gray-200 rounded-sm divide-y divide-gray-100 shadow-sm">
+                    <p class="text-xs text-gray-400 p-8 text-center">Loading your reserved bag...</p>
+                </div>
+            </div>
+
+            <!-- ORDER SUMMARY -->
+            <div class="lg:col-span-1">
+                <div class="bg-white border border-gray-200 p-6 rounded-sm shadow-sm space-y-5 sticky top-24">
+                    <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 border-b pb-3">Order
+                        Summary</h3>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between text-gray-600">
+                            <span>Subtotal</span>
+                            <span id="summary-subtotal" class="font-medium text-black">৳ 0</span>
+                        </div>
+                        <div class="flex justify-between text-gray-600">
+                            <span>Shipping</span>
+                            <span class="font-medium text-emerald-600 uppercase text-[11px]">Free</span>
+                        </div>
+                        <div class="border-t pt-3 flex justify-between items-baseline">
+                            <span class="text-xs uppercase tracking-wider font-bold text-black">Total</span>
+                            <span id="summary-total" class="text-xl font-bold text-black">৳ 0</span>
+                        </div>
+                    </div>
+
+                    <button onclick="checkout()" id="checkout-btn"
+                        class="w-full bg-black text-white text-xs uppercase tracking-widest py-4 hover:bg-neutral-800 transition font-medium">
+                        Confirm & Place Order
+                    </button>
+
+                    <p class="text-[10px] text-gray-400 text-center leading-relaxed">
+                        Limited stock items are held for 1 hour. Confirm order before expiration.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-modal"
+        class="fixed top-6 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 ease-out max-w-sm w-full">
+        <div class="bg-black text-white p-4 shadow-2xl border border-gray-800 flex items-start space-x-3 rounded-sm">
+            <div class="flex-shrink-0 mt-0.5" id="toast-icon"></div>
+            <div class="flex-1">
+                <h4 id="toast-title" class="text-xs uppercase tracking-widest font-semibold text-white">Notice</h4>
+                <p id="toast-message" class="text-xs text-gray-300 mt-0.5 leading-relaxed"></p>
+            </div>
+            <button onclick="hideToast()"
+                class="text-gray-500 hover:text-white transition text-sm leading-none">&times;</button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-white mt-16 border-t border-gray-900">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-bold tracking-widest uppercase text-white">AVEN</span>
+                <span class="text-gray-600">|</span>
+                <p>© 2026 AVEN Apparel. All rights reserved.</p>
+            </div>
+            <p class="tracking-widest uppercase text-[11px] text-gray-400 font-light">
+                Developed by <span class="text-white font-semibold tracking-wider">TANIM HASAN OVI</span>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = JSON.parse(localStorage.getItem('user')) || null;
+        let currentToken = localStorage.getItem('token') || null;
+        let cart = [];
+        let toastTimeout;
+        let countdownInterval;
+
+        function getGuestId() {
+            let gid = localStorage.getItem('aven_guest_id');
+            if (!gid) {
+                gid = 'guest_' + Math.random().toString(36).substring(2, 11) + Date.now();
+                localStorage.setItem('aven_guest_id', gid);
+            }
+            return gid;
+        }
+
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast-modal');
+            const title = document.getElementById('toast-title');
+            const msg = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+
+            msg.innerText = message;
+
+            if (type === 'error') {
+                title.innerText = 'Notice';
+                icon.innerHTML = `<svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+            } else {
+                title.innerText = 'Success';
+                icon.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+            }
+
+            toast.classList.remove('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(hideToast, 3500);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast-modal');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+        }
+
+        async function loadServerCart() {
+            try {
+                const token = localStorage.getItem('token');
+                const gid = getGuestId();
+
+                const headers = { 'x-guest-id': gid };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const res = await fetch(`${API_BASE}/cart?t=${Date.now()}`, {
+                    headers: headers,
+                    cache: 'no-store'
+                });
+
+                if (!res.ok) throw new Error('Failed to load cart');
+                const data = await res.json();
+                cart = Array.isArray(data) ? data : (data.items || []);
+                renderCart();
+                startLiveCountdown();
+            } catch (err) {
+                console.error("Cart fetch error:", err);
+                cart = [];
+                renderCart();
+            }
+        }
+
+        async function removeItem(reservationId) {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = { 'x-guest-id': getGuestId() };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const res = await fetch(`${API_BASE}/cart/${reservationId}`, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+                if (res.ok) {
+                    showToast('Item removed from bag', 'success');
+                    loadServerCart();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Failed to remove item', 'error');
+                }
+            } catch (e) {
+                showToast('Network error while removing item', 'error');
+            }
+        }
+
+        async function updateCartItem(reservationId, quantity, size) {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'x-guest-id': getGuestId()
+                };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const res = await fetch(`${API_BASE}/cart/${reservationId}`, {
+                    method: 'PATCH',
+                    headers: headers,
+                    body: JSON.stringify({ quantity, size })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('Bag updated', 'success');
+                    loadServerCart();
+                } else {
+                    showToast(data.message || 'Failed to update item', 'error');
+                    loadServerCart();
+                }
+            } catch (e) {
+                showToast('Network error while updating item', 'error');
+            }
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-container');
+            const countText = document.getElementById('cart-item-count');
+            const subtotalText = document.getElementById('summary-subtotal');
+            const totalText = document.getElementById('summary-total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            if (!container) return;
+
+            const totalItems = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+            const totalPrice = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (parseInt(item.quantity) || 0)), 0);
+
+            countText.innerText = `${totalItems} item(s) currently reserved in your bag.`;
+            subtotalText.innerText = `৳ ${totalPrice.toLocaleString()}`;
+            totalText.innerText = `৳ ${totalPrice.toLocaleString()}`;
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center">
+                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                        <p class="text-xs uppercase tracking-widest text-gray-500 font-medium">Your shopping bag is empty</p>
+                        <a href="/" class="inline-block mt-4 text-xs font-semibold uppercase tracking-wider text-black border-b border-black pb-0.5 hover:text-gray-600 transition">Browse Products</a>
+                    </div>
+                `;
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            checkoutBtn.disabled = false;
+            checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            container.innerHTML = cart.map(item => {
+                const isExpiring = item.expiresAt && item.expiresAt !== 'null' && !isNaN(new Date(item.expiresAt).getTime());
+
+                const timerBadge = isExpiring ? `
+                    <div class="mt-1 flex items-center space-x-1.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-sm w-fit font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span class="countdown-timer" data-expires="${item.expiresAt}">Calculating hold time...</span>
+                    </div>` : `
+                    <div class="mt-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-sm w-fit font-medium">
+                        ✓ Reserved in Bag
+                    </div>`;
+
+                const sizeOptions = (item.availableVariants && item.availableVariants.length > 0)
+                    ? item.availableVariants.map(v => `<option value="${v.size}" ${v.size === item.size ? 'selected' : ''}>${(v.size || '').toUpperCase()}</option>`).join('')
+                    : `<option value="${item.size || 'M'}">${(item.size || 'M').toUpperCase()}</option>`;
+
+                const itemPrice = Number(item.price) || 0;
+                const itemQty = parseInt(item.quantity) || 1;
+                const itemTotal = itemPrice * itemQty;
+
+                return `
+                <div class="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <img src="${item.image || '/uploads/default.png'}" class="w-16 h-20 object-cover border border-gray-200 bg-gray-50 flex-shrink-0" onerror="this.src='/uploads/default.png'">
+                        <div>
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-black">${item.title || 'Garment'}</h3>
+                            
+                            <div class="flex items-center space-x-2 mt-1">
+                                <label class="text-[11px] text-gray-500">Size:</label>
+                                <select onchange="updateCartItem('${item.reservationId}', ${itemQty}, this.value)" 
+                                    class="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white font-medium focus:outline-none focus:border-black">
+                                    ${sizeOptions}
+                                </select>
+                                <span class="text-xs text-gray-400">|</span>
+                                <span class="text-xs text-gray-500">Unit: ৳${itemPrice}</span>
+                            </div>
+
+                            ${timerBadge}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-6">
+                        <div class="flex items-center border border-gray-300 rounded">
+                            <button onclick="updateCartItem('${item.reservationId}', ${itemQty - 1}, '${item.size}')" 
+                                class="px-2.5 py-1 text-xs hover:bg-gray-100 transition ${itemQty <= 1 ? 'opacity-40 cursor-not-allowed' : ''}" 
+                                ${itemQty <= 1 ? 'disabled' : ''}>-</button>
+                            <span class="px-2.5 py-1 text-xs font-semibold text-black">${itemQty}</span>
+                            <button onclick="updateCartItem('${item.reservationId}', ${itemQty + 1}, '${item.size}')" 
+                                class="px-2.5 py-1 text-xs hover:bg-gray-100 transition">+</button>
+                        </div>
+
+                        <span class="text-sm font-bold text-black min-w-[5rem] text-right">
+                            ৳ ${itemTotal.toLocaleString()}
+                        </span>
+
+                        <button onclick="removeItem('${item.reservationId}')" class="text-gray-400 hover:text-rose-600 transition" title="Remove Item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function startLiveCountdown() {
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                const timers = document.querySelectorAll('.countdown-timer');
+                if (timers.length === 0) {
+                    clearInterval(countdownInterval);
+                    return;
+                }
+
+                let hasExpired = false;
+
+                timers.forEach(timer => {
+                    const expiryAttr = timer.getAttribute('data-expires');
+                    if (!expiryAttr || expiryAttr === 'null') return;
+
+                    const expiry = new Date(expiryAttr).getTime();
+                    if (isNaN(expiry)) return;
+
+                    const now = new Date().getTime();
+                    const distance = expiry - now;
+
+                    if (distance <= 0) {
+                        timer.innerText = 'Hold expired';
+                        hasExpired = true;
+                    } else {
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        timer.innerText = `Hold expires in: ${minutes}m ${seconds < 10 ? '0' : ''}${seconds}s`;
+                    }
+                });
+
+                if (hasExpired) {
+                    clearInterval(countdownInterval);
+                    setTimeout(() => {
+                        showToast('Some item holds expired.', 'error');
+                        loadServerCart();
+                    }, 1500);
+                }
+            }, 1000);
+        }
+
+        async function checkout() {
+            currentUser = JSON.parse(localStorage.getItem('user')) || null;
+            currentToken = localStorage.getItem('token') || null;
+
+            if (!cart || cart.length === 0) {
+                showToast('Your cart is empty! Please add products before placing an order.', 'error');
+                return;
+            }
+
+            if (!currentUser || !currentToken) {
+                window.location.href = '/login.html?redirect=cart';
+                return;
+            }
+
+            if (currentUser.role === 'admin' || localStorage.getItem('isAdmin') === 'true') {
+                showToast('Admins are not allowed to place orders.', 'error');
+                return;
+            }
+
+            const hasPhone = currentUser.phone && currentUser.phone.trim() !== '';
+            const hasAddress = currentUser.address && currentUser.address.street && currentUser.address.city;
+
+            if (!hasPhone || !hasAddress) {
+                showToast('Please add your Phone Number and Delivery Address before placing an order.', 'error');
+                setTimeout(() => {
+                    window.location.href = '/profile.html';
+                }, 1500);
+                return;
+            }
+
+            const btn = document.getElementById('checkout-btn');
+            btn.innerText = 'Processing Order...';
+            btn.disabled = true;
+
+            const orderPayload = {
+                items: cart.map(item => ({
+                    productId: item.productId,
+                    size: item.size,
+                    quantity: parseInt(item.quantity) || 1
+                })),
+                shippingAddress: currentUser.address
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(orderPayload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast('Order placed successfully!', 'success');
+                    localStorage.removeItem('aven_cart');
+                    setTimeout(() => {
+                        window.location.href = '/profile.html';
+                    }, 1000);
+                } else {
+                    showToast(data.message || 'Order failed to process', 'error');
+                    if (data.message && data.message.includes('profile')) {
+                        setTimeout(() => {
+                            window.location.href = '/profile.html';
+                        }, 1500);
+                    } else {
+                        loadServerCart();
+                    }
+                }
+            } catch (err) {
+                showToast('Network error while placing order.', 'error');
+            } finally {
+                btn.innerText = 'Confirm & Place Order';
+                btn.disabled = false;
+            }
+        }
+
+        loadServerCart();
+    </script>
+</body>
+
+</html>

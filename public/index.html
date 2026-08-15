@@ -5,22 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AVEN — Premium Cloth Store</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-50 min-h-screen text-gray-900 font-sans flex flex-col justify-between">
+<body class="bg-gray-50 min-h-screen text-gray-900 font-sans flex flex-col justify-between antialiased">
 
     <!-- HEADER -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
 
-                <!-- Logo (Shows All Products on click) -->
+                <!-- Logo -->
                 <div class="flex-shrink-0 flex items-center cursor-pointer" onclick="filterCategory('All')">
                     <h1 class="text-2xl font-bold tracking-widest text-black uppercase">AVEN</h1>
                 </div>
 
-                <!-- Center Nav with Filter Actions -->
+                <!-- Category Filters -->
                 <nav class="hidden md:flex space-x-10">
                     <button onclick="filterCategory('Man')" id="nav-man"
                         class="text-gray-900 hover:text-gray-500 text-sm font-medium uppercase tracking-wider transition">Man</button>
@@ -28,15 +29,9 @@
                         class="text-gray-900 hover:text-gray-500 text-sm font-medium uppercase tracking-wider transition">Woman</button>
                 </nav>
 
-                <!-- Right Icons -->
+                <!-- Header Actions -->
                 <div class="flex items-center space-x-6 text-gray-900">
-                    <button class="hover:text-gray-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
-                        </svg>
-                    </button>
-
+                    <!-- Account Icon -->
                     <button onclick="handleAccountClick()" class="hover:text-gray-500 relative" title="Account">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -44,16 +39,19 @@
                             </path>
                         </svg>
                         <span id="auth-status-dot"
-                            class="hidden absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full"></span>
+                            class="hidden absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full"></span>
                     </button>
 
-                    <button class="hover:text-gray-500 relative">
+                    <!-- Cart Link to cart.html -->
+                    <a href="/cart.html" class="hover:text-gray-500 relative" title="Shopping Bag">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z">
                             </path>
                         </svg>
-                    </button>
+                        <span id="cart-count-badge"
+                            class="hidden absolute -top-1.5 -right-2 bg-black text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                    </a>
                 </div>
 
             </div>
@@ -73,7 +71,7 @@
         <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8"></div>
     </main>
 
-    <!-- IMAGE & PRODUCT QUICK VIEW POP-UP MODAL -->
+    <!-- PRODUCT OPTION MODAL (Size & Quantity Selection) -->
     <div id="image-modal"
         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white max-w-3xl w-full rounded-sm overflow-hidden shadow-2xl relative flex flex-col md:flex-row">
@@ -86,9 +84,7 @@
             </button>
 
             <div class="w-full md:w-1/2 bg-gray-100 flex items-center justify-center p-2">
-                <img id="popup-img" src="" alt="Product Large View"
-                    class="w-full h-auto max-h-[70vh] object-contain cursor-zoom-in"
-                    onclick="openFullscreenImg(this.src)">
+                <img id="popup-img" src="" alt="Product Large View" class="w-full h-auto max-h-[70vh] object-contain">
             </div>
 
             <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between">
@@ -99,52 +95,40 @@
                     <p id="popup-price" class="text-xl font-bold text-black mb-4"></p>
                     <p id="popup-description" class="text-xs text-gray-600 leading-relaxed mb-6"></p>
 
-                    <label class="text-xs font-semibold uppercase tracking-wider text-gray-500 block mb-2">Select
-                        Size:</label>
-                    <div id="popup-sizes" class="flex flex-wrap gap-2 mb-6"></div>
+                    <!-- Size Selection -->
+                    <div class="mb-5">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-gray-500 block mb-2">Select
+                            Size:</label>
+                        <div id="popup-sizes" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Quantity Selection -->
+                    <div class="mb-6">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-gray-500 block mb-2">Select
+                            Quantity:</label>
+                        <div class="flex items-center space-x-3">
+                            <div class="flex items-center border border-gray-300 rounded-sm bg-white">
+                                <button onclick="changeModalQty(-1)"
+                                    class="px-3 py-1.5 text-sm font-semibold hover:bg-gray-100 transition">-</button>
+                                <span id="modal-qty-display"
+                                    class="px-4 py-1.5 text-xs font-bold text-black text-center min-w-[2.5rem]">1</span>
+                                <button onclick="changeModalQty(1)"
+                                    class="px-3 py-1.5 text-sm font-semibold hover:bg-gray-100 transition">+</button>
+                            </div>
+                            <span id="modal-stock-hint" class="text-[11px] text-gray-500 font-medium"></span>
+                        </div>
+                    </div>
                 </div>
 
-                <button id="popup-order-btn"
-                    class="w-full bg-black text-white text-xs uppercase tracking-widest py-3.5 hover:bg-gray-800 transition">
-                    Order Now
+                <button onclick="confirmAddToCart()"
+                    class="w-full bg-black text-white text-xs uppercase tracking-widest py-3.5 hover:bg-gray-800 transition font-medium">
+                    Add to Cart
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- AUTH MODAL -->
-    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white p-8 max-w-md w-full mx-4 relative">
-            <button onclick="toggleModal(false)"
-                class="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
-            <div class="flex border-b mb-6 text-sm">
-                <button id="tab-login-btn" onclick="switchAuthMode('login')"
-                    class="flex-1 py-2 font-semibold border-b-2 border-black">Login</button>
-                <button id="tab-reg-btn" onclick="switchAuthMode('register')"
-                    class="flex-1 py-2 text-gray-400">Register</button>
-            </div>
-            <form id="auth-form" class="space-y-4">
-                <div id="reg-name-field" class="hidden">
-                    <input type="text" id="auth-name" placeholder="Full Name" class="w-full border p-2.5 text-sm">
-                </div>
-                <input type="email" id="auth-email" placeholder="Email Address" required
-                    class="w-full border p-2.5 text-sm">
-                <input type="password" id="auth-password" placeholder="Password" required
-                    class="w-full border p-2.5 text-sm">
-                <div id="reg-role-field" class="hidden">
-                    <label class="text-xs text-gray-500">Account Type:</label>
-                    <select id="auth-role" class="w-full border p-2 text-sm mt-1">
-                        <option value="customer">Customer</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <button type="submit" id="auth-submit-btn"
-                    class="w-full bg-black text-white py-3 text-xs uppercase tracking-widest hover:bg-gray-800">Login</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- LUXURY TOAST NOTIFICATION POPUP -->
+    <!-- NOTIFICATION TOAST -->
     <div id="toast-modal"
         class="fixed top-6 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 ease-out max-w-sm w-full">
         <div class="bg-black text-white p-4 shadow-2xl border border-gray-800 flex items-start space-x-3 rounded-sm">
@@ -162,16 +146,11 @@
     <footer class="bg-black text-white mt-16 border-t border-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-
-                <!-- Brand Info -->
                 <div class="space-y-3">
                     <h2 class="text-xl font-bold tracking-widest uppercase">AVEN</h2>
-                    <p class="text-xs text-gray-400 leading-relaxed">
-                        Curated premium apparel designed for modern elegance and minimalist lifestyle.
-                    </p>
+                    <p class="text-xs text-gray-400 leading-relaxed">Curated premium apparel designed for modern
+                        elegance.</p>
                 </div>
-
-                <!-- Quick Links -->
                 <div>
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-300 mb-3">Shop</h3>
                     <ul class="space-y-2 text-xs text-gray-400">
@@ -183,8 +162,6 @@
                                 Arrivals</button></li>
                     </ul>
                 </div>
-
-                <!-- Customer Care -->
                 <div>
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-300 mb-3">Help & Support</h3>
                     <ul class="space-y-2 text-xs text-gray-400">
@@ -193,19 +170,12 @@
                         <li><a href="#" class="hover:text-white transition">Size Guide</a></li>
                     </ul>
                 </div>
-
-                <!-- Location -->
                 <div>
                     <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-300 mb-3">Location</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed">
-                        Dhaka, Bangladesh<br>
-                        Email: support@avenwear.com
+                    <p class="text-xs text-gray-400 leading-relaxed">Dhaka, Bangladesh<br>Email: support@avenwear.com
                     </p>
                 </div>
-
             </div>
-
-            <!-- Bottom Bar with Developer Credit -->
             <div
                 class="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4">
                 <p>© 2026 AVEN Apparel. All rights reserved.</p>
@@ -218,14 +188,25 @@
 
     <script>
         const API_BASE = '/api';
+        const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
         let currentUser = JSON.parse(localStorage.getItem('user')) || null;
         let currentToken = localStorage.getItem('token') || null;
-        let authMode = 'login';
         let allProducts = [];
         let currentCategory = 'All';
+
+        let selectedProduct = null;
         let selectedModalSize = '';
-        let selectedModalProductId = '';
+        let selectedModalQty = 1;
         let toastTimeout;
+
+        function getGuestId() {
+            let gid = localStorage.getItem('aven_guest_id');
+            if (!gid) {
+                gid = 'guest_' + Math.random().toString(36).substring(2, 11) + Date.now();
+                localStorage.setItem('aven_guest_id', gid);
+            }
+            return gid;
+        }
 
         function updateAuthIndicator() {
             const dot = document.getElementById('auth-status-dot');
@@ -233,10 +214,47 @@
             else dot.classList.add('hidden');
         }
 
-        function toggleModal(show) { document.getElementById('auth-modal').classList.toggle('hidden', !show); }
-        function toggleImageModal(show) { document.getElementById('image-modal').classList.toggle('hidden', !show); }
+        async function addToCart(productId, size, quantity = 1) {
+            const token = localStorage.getItem('token');
+            const guestId = localStorage.getItem('aven_guest_id') || 'guest_' + Math.random().toString(36).substring(2, 11) + Date.now();
+            localStorage.setItem('aven_guest_id', guestId);
 
-        // TOAST NOTIFICATION LOGIC
+            const headers = {
+                'Content-Type': 'application/json',
+                'x-guest-id': guestId
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            try {
+                const res = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        productId,
+                        size,
+                        quantity,
+                        guestId
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Added to bag successfully!');
+                } else {
+                    alert(data.message || 'Failed to add item');
+                }
+            } catch (err) {
+                alert('Network error while adding to bag.');
+            }
+        }
+
+        function toggleImageModal(show) {
+            document.getElementById('image-modal').classList.toggle('hidden', !show);
+        }
+
         function showToast(message, type = 'error') {
             const toast = document.getElementById('toast-modal');
             const title = document.getElementById('toast-title');
@@ -246,8 +264,8 @@
             msg.innerText = message;
 
             if (type === 'error') {
-                title.innerText = 'Access Restricted';
-                icon.innerHTML = `<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+                title.innerText = 'Notice';
+                icon.innerHTML = `<svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
             } else {
                 title.innerText = 'Success';
                 icon.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
@@ -257,7 +275,7 @@
             toast.classList.add('translate-y-0', 'opacity-100');
 
             clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(hideToast, 4000);
+            toastTimeout = setTimeout(hideToast, 3500);
         }
 
         function hideToast() {
@@ -266,18 +284,9 @@
             toast.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
         }
 
-        function switchAuthMode(mode) {
-            authMode = mode;
-            document.getElementById('tab-login-btn').className = mode === 'login' ? 'flex-1 py-2 font-semibold border-b-2 border-black' : 'flex-1 py-2 text-gray-400';
-            document.getElementById('tab-reg-btn').className = mode === 'register' ? 'flex-1 py-2 font-semibold border-b-2 border-black' : 'flex-1 py-2 text-gray-400';
-            document.getElementById('reg-name-field').classList.toggle('hidden', mode !== 'register');
-            document.getElementById('reg-role-field').classList.toggle('hidden', mode !== 'register');
-            document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Login' : 'Create Account';
-        }
-
         function handleAccountClick() {
             if (!currentUser) {
-                toggleModal(true);
+                window.location.href = '/login.html';
             } else if (currentUser.role === 'admin') {
                 window.location.href = '/admin-orders.html';
             } else {
@@ -300,57 +309,152 @@
             const p = allProducts.find(item => item._id === productId);
             if (!p) return;
 
-            selectedModalProductId = p._id;
+            selectedProduct = p;
+            selectedModalQty = 1;
+            selectedModalSize = '';
+
             document.getElementById('popup-img').src = p.image || '/uploads/default.png';
             document.getElementById('popup-title').innerText = p.title;
             document.getElementById('popup-category').innerText = p.category;
             document.getElementById('popup-price').innerText = `৳ ${p.price}`;
             document.getElementById('popup-description').innerText = p.description;
+            document.getElementById('modal-qty-display').innerText = selectedModalQty;
+            document.getElementById('modal-stock-hint').innerText = 'Please select a size to view available stock';
 
-            const availableVariant = p.variants.find(v => v.quantity > 0);
-            selectedModalSize = availableVariant ? availableVariant.size : (p.variants[0]?.size || 'M');
-
-            const sizeContainer = document.getElementById('popup-sizes');
-            sizeContainer.innerHTML = p.variants.map(v => `
-        <button 
-          onclick="selectModalSize('${v.size}', ${v.isOutOfStock})" 
-          id="modal-size-btn-${v.size}"
-          ${v.isOutOfStock ? 'disabled' : ''}
-          class="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border transition ${v.isOutOfStock
-                    ? 'text-gray-300 border-gray-200 line-through cursor-not-allowed bg-gray-50'
-                    : (v.size === selectedModalSize ? 'bg-black text-white border-black' : 'text-black border-gray-300 hover:border-black')
-                }">
-          ${v.size} ${v.isOutOfStock ? '(Out)' : `(${v.quantity})`}
-        </button>
-      `).join('');
-
-            document.getElementById('popup-order-btn').onclick = () => {
-                orderSingleProduct(selectedModalProductId, selectedModalSize);
-                toggleImageModal(false);
-            };
-
+            renderModalSizes();
             toggleImageModal(true);
+        }
+
+        function renderModalSizes() {
+            if (!selectedProduct) return;
+            const sizeContainer = document.getElementById('popup-sizes');
+
+            sizeContainer.innerHTML = ALL_SIZES.map(size => {
+                const variant = selectedProduct.variants.find(v => v.size === size);
+                const quantity = variant ? variant.quantity : 0;
+                const isOutOfStock = quantity <= 0;
+
+                return `
+                    <button 
+                      onclick="selectModalSize('${size}', ${isOutOfStock})" 
+                      ${isOutOfStock ? 'disabled' : ''}
+                      class="px-4 py-2 text-xs font-semibold uppercase tracking-wider border transition ${isOutOfStock
+                        ? 'text-gray-300 border-gray-200 line-through cursor-not-allowed bg-gray-50'
+                        : (size === selectedModalSize ? 'bg-black text-white border-black shadow-sm' : 'text-black border-gray-300 hover:border-black')
+                    }">
+                      ${size}
+                    </button>
+                `;
+            }).join('');
+
+            if (selectedModalSize) {
+                const currentVariant = selectedProduct.variants.find(v => v.size === selectedModalSize);
+                const stock = currentVariant ? currentVariant.quantity : 0;
+                document.getElementById('modal-stock-hint').innerText = stock > 0 ? `${stock} pieces in stock` : 'Out of stock';
+            }
         }
 
         function selectModalSize(size, isOutOfStock) {
             if (isOutOfStock) return;
             selectedModalSize = size;
-            const buttons = document.querySelectorAll('#popup-sizes button');
-            buttons.forEach(btn => {
-                if (!btn.disabled) {
-                    btn.className = 'px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border text-black border-gray-300 hover:border-black';
+            selectedModalQty = 1;
+            document.getElementById('modal-qty-display').innerText = selectedModalQty;
+            renderModalSizes();
+        }
+
+        function changeModalQty(delta) {
+            if (!selectedProduct) return;
+            if (!selectedModalSize) {
+                showToast('Please select a size first.', 'error');
+                return;
+            }
+
+            const currentVariant = selectedProduct.variants.find(v => v.size === selectedModalSize);
+            const maxStock = currentVariant ? currentVariant.quantity : 1;
+
+            let nextQty = selectedModalQty + delta;
+            if (nextQty < 1) nextQty = 1;
+            if (nextQty > maxStock) {
+                showToast(`Only ${maxStock} items available in size ${selectedModalSize}`, 'error');
+                return;
+            }
+
+            selectedModalQty = nextQty;
+            document.getElementById('modal-qty-display').innerText = selectedModalQty;
+        }
+
+        async function confirmAddToCart() {
+            if (!selectedProduct) return;
+
+            if (!selectedModalSize) {
+                showToast('Please select a size first.', 'error');
+                return;
+            }
+
+            if (currentUser && currentUser.role === 'admin') {
+                showToast('Admins cannot add items to cart.', 'error');
+                return;
+            }
+
+            try {
+                const guestId = getGuestId();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'x-guest-id': guestId
+                };
+                if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+
+                const res = await fetch(`${API_BASE}/cart/add`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        productId: selectedProduct._id,
+                        size: selectedModalSize,
+                        quantity: selectedModalQty,
+                        guestId: guestId
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast(data.expiresAt
+                        ? 'Added to bag! (Low stock: held for 1 hour)'
+                        : 'Added to bag!', 'success');
+                    toggleImageModal(false);
+                    loadProducts();
+                    fetchCartCount();
+                } else {
+                    showToast(data.message || 'Failed to add item', 'error');
                 }
-            });
-            const activeBtn = document.getElementById(`modal-size-btn-${size}`);
-            if (activeBtn) {
-                activeBtn.className = 'px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border bg-black text-white border-black';
+            } catch (err) {
+                showToast('Network error, please try again.', 'error');
             }
         }
+        async function fetchCartCount() {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = { 'x-guest-id': getGuestId() };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        function openFullscreenImg(url) {
-            window.open(url, '_blank');
+                const res = await fetch(`${API_BASE}/cart?t=${Date.now()}`, {
+                    headers: headers,
+                    cache: 'no-store'
+                });
+
+                if (res.ok) {
+                    const cart = await res.json();
+                    const badge = document.getElementById('cart-count-badge');
+                    const count = cart.reduce((sum, i) => sum + (i.quantity || 0), 0);
+                    if (count > 0) {
+                        badge.innerText = count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (e) { }
         }
-
         function renderProducts() {
             const container = document.getElementById('product-list');
             const filtered = currentCategory === 'All'
@@ -362,63 +466,44 @@
                 return;
             }
 
-            container.innerHTML = filtered.map(p => `
-        <div class="group">
-          <div onclick="openImagePreview('${p._id}')" class="bg-gray-100 aspect-[3/4] flex items-center justify-center mb-3 relative overflow-hidden cursor-pointer">
-             <img src="${p.image || '/uploads/default.png'}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-             <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold text-black">${p.category}</span>
-             <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                <span class="bg-white text-black text-[11px] font-semibold uppercase tracking-widest px-3 py-1.5 shadow">Quick View</span>
-             </div>
-          </div>
-          
-          <h3 onclick="openImagePreview('${p._id}')" class="text-sm font-medium text-black uppercase tracking-wide cursor-pointer hover:underline">${p.title}</h3>
-          <p class="text-xs text-gray-500 mb-1 line-clamp-1">${p.description}</p>
-          <p class="text-black font-semibold text-sm mb-2">৳ ${p.price}</p>
-          
-          <div class="flex gap-1.5 mb-3">
-            ${p.variants.map(v => `
-              <span class="text-[10px] uppercase px-2 py-0.5 border ${v.isOutOfStock ? 'text-gray-300 border-gray-200 line-through' : 'text-black border-black'}">
-                ${v.size}
-              </span>
-            `).join('')}
-          </div>
-          <button onclick="orderSingleProduct('${p._id}', '${p.variants[0]?.size || 'M'}')" class="w-full bg-black text-white text-xs uppercase tracking-wider py-2 hover:bg-gray-800">Order Now</button>
-        </div>
-      `).join('');
+            container.innerHTML = filtered.map(p => {
+                const sizeBadges = ALL_SIZES.map(size => {
+                    const variant = p.variants ? p.variants.find(v => v.size === size) : null;
+                    const isOut = !variant || variant.quantity <= 0;
+                    return `
+                      <span class="text-[10px] uppercase px-1.5 py-0.5 border ${isOut ? 'text-gray-300 border-gray-200 line-through' : 'text-black border-black'}">
+                        ${size}
+                      </span>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="group flex flex-col justify-between">
+                      <div>
+                          <div onclick="openImagePreview('${p._id}')" class="bg-gray-100 aspect-[3/4] flex items-center justify-center mb-3 relative overflow-hidden cursor-pointer">
+                             <img src="${p.image || '/uploads/default.png'}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                             <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold text-black">${p.category}</span>
+                             <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                <span class="bg-white text-black text-[11px] font-semibold uppercase tracking-widest px-3 py-1.5 shadow">Select Options</span>
+                             </div>
+                          </div>
+                          
+                          <h3 onclick="openImagePreview('${p._id}')" class="text-sm font-medium text-black uppercase tracking-wide cursor-pointer hover:underline">${p.title}</h3>
+                          <p class="text-xs text-gray-500 mb-1 line-clamp-1">${p.description}</p>
+                          <p class="text-black font-semibold text-sm mb-2">৳ ${p.price}</p>
+                          
+                          <div class="flex flex-wrap gap-1 mb-3">
+                            ${sizeBadges}
+                          </div>
+                      </div>
+                      
+                      <button onclick="openImagePreview('${p._id}')" class="w-full bg-black text-white text-xs uppercase tracking-wider py-2.5 hover:bg-neutral-800 transition font-medium">
+                        Add to Cart
+                      </button>
+                    </div>
+                `;
+            }).join('');
         }
-
-        // AUTH FORM
-        document.getElementById('auth-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
-            const payload = {
-                email: document.getElementById('auth-email').value,
-                password: document.getElementById('auth-password').value,
-            };
-            if (authMode === 'register') {
-                payload.name = document.getElementById('auth-name').value;
-                payload.role = document.getElementById('auth-role').value;
-            }
-
-            const res = await fetch(`${API_BASE}${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-
-            if (res.ok) {
-                localStorage.setItem('user', JSON.stringify(data.user));
-                localStorage.setItem('token', data.token);
-                currentUser = data.user;
-                currentToken = data.token;
-                toggleModal(false);
-                handleAccountClick();
-            } else {
-                showToast(data.message || 'Authentication error', 'error');
-            }
-        });
 
         async function loadProducts() {
             const res = await fetch(`${API_BASE}/products`);
@@ -426,47 +511,8 @@
             renderProducts();
         }
 
-        // SINGLE CLEANED ORDER FUNCTION
-        async function orderSingleProduct(productId, size) {
-            if (!currentUser || !currentToken) {
-                showToast('Please login first to place an order.', 'error');
-                toggleModal(true);
-                return;
-            }
-
-            // Block admin from placing orders
-            if (currentUser.role === 'admin') {
-                showToast('Admins are not allowed to place orders.', 'error');
-                return;
-            }
-
-            try {
-                const res = await fetch(`${API_BASE}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({
-                        items: [{ productId, size, quantity: 1 }],
-                        shippingAddress: currentUser.address
-                    })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    showToast('Order placed successfully!', 'success');
-                    loadProducts();
-                } else {
-                    showToast(data.message || 'Order failed', 'error');
-                }
-            } catch (err) {
-                showToast('Network error, please try again.', 'error');
-            }
-        }
-
         updateAuthIndicator();
+        fetchCartCount();
         loadProducts();
     </script>
 </body>

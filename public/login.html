@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Portal — AVEN</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body
+    class="bg-[#fafafa] min-h-screen text-gray-900 font-sans flex flex-col justify-between antialiased selection:bg-black selection:text-white">
+
+    <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="text-2xl font-bold tracking-widest text-black uppercase">AVEN</a>
+                    <span class="text-gray-300">/</span>
+                    <span class="text-xs uppercase tracking-widest text-gray-500 font-medium">Access Portal</span>
+                </div>
+
+                <a href="/"
+                    class="text-xs uppercase tracking-wider text-gray-600 hover:text-black border-b border-gray-300 hover:border-black pb-0.5 transition">
+                    Return to Store
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md w-full mx-auto p-4 sm:p-6 flex-grow flex items-center justify-center my-6">
+        <div
+            class="bg-white border border-gray-200/80 p-8 sm:p-10 rounded-sm shadow-[0_4px_25px_rgba(0,0,0,0.03)] w-full">
+
+            <div class="text-center mb-8">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">AVEN
+                    Membership</span>
+                <h1 id="auth-header-title" class="text-2xl font-light tracking-tight uppercase text-black">Welcome Back
+                </h1>
+                <p id="auth-header-subtitle" class="text-xs text-gray-500 mt-1">Sign in with Google or your email
+                    credentials.</p>
+            </div>
+
+            <div class="mb-6 flex justify-center">
+                <div id="google-btn-container" class="w-full flex justify-center"></div>
+            </div>
+
+            <div class="relative flex py-2 items-center mb-6">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Or use
+                    email</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <div class="flex border-b border-gray-200 mb-6 text-xs uppercase tracking-wider">
+                <button type="button" id="tab-login-btn" onclick="switchAuthMode('login')"
+                    class="flex-1 py-2.5 font-bold border-b-2 border-black text-black transition">Login</button>
+                <button type="button" id="tab-reg-btn" onclick="switchAuthMode('register')"
+                    class="flex-1 py-2.5 font-medium text-gray-400 hover:text-black transition">Sign Up</button>
+            </div>
+
+            <form id="auth-form" onsubmit="submitAuthForm(event)" class="space-y-4">
+                <div id="reg-name-field" class="hidden">
+                    <label class="block text-[11px] uppercase tracking-wider text-gray-500 mb-1 font-medium">Full
+                        Name</label>
+                    <input type="text" id="auth-name" name="name" placeholder="Tanim Hasan Ovi" autocomplete="name"
+                        class="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-black rounded-sm">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] uppercase tracking-wider text-gray-500 mb-1 font-medium">Email
+                        Address</label>
+                    <input type="email" id="auth-email" name="email" placeholder="you@example.com" required
+                        autocomplete="email username"
+                        class="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-black rounded-sm">
+                </div>
+
+                <div>
+                    <label
+                        class="block text-[11px] uppercase tracking-wider text-gray-500 mb-1 font-medium">Password</label>
+                    <input type="password" id="auth-password" name="password" placeholder="••••••••" required
+                        autocomplete="current-password"
+                        class="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-black rounded-sm">
+                </div>
+
+                <div id="reg-confirm-password-field" class="hidden">
+                    <label class="block text-[11px] uppercase tracking-wider text-gray-500 mb-1 font-medium">Confirm
+                        Password</label>
+                    <input type="password" id="auth-confirm-password" name="confirm-password" placeholder="••••••••"
+                        autocomplete="new-password"
+                        class="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-black rounded-sm">
+                </div>
+
+                <button type="submit" id="auth-submit-btn"
+                    class="w-full bg-black text-white py-3.5 text-xs uppercase tracking-widest hover:bg-neutral-800 transition font-medium rounded-sm shadow-sm mt-2">
+                    Login
+                </button>
+            </form>
+
+        </div>
+    </main>
+
+    <div id="toast-modal"
+        class="fixed top-6 right-6 z-50 transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 ease-out max-w-sm w-full">
+        <div class="bg-black text-white p-4 shadow-2xl border border-gray-800 flex items-start space-x-3 rounded-sm">
+            <div class="flex-shrink-0 mt-0.5" id="toast-icon"></div>
+            <div class="flex-1">
+                <h4 id="toast-title" class="text-xs uppercase tracking-widest font-semibold text-white">Notice</h4>
+                <p id="toast-message" class="text-xs text-gray-300 mt-0.5 leading-relaxed"></p>
+            </div>
+            <button onclick="hideToast()"
+                class="text-gray-500 hover:text-white transition text-sm leading-none">&times;</button>
+        </div>
+    </div>
+
+    <footer class="bg-black text-white border-t border-gray-900">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-bold tracking-widest uppercase text-white">AVEN</span>
+                <span class="text-gray-600">|</span>
+                <p>© 2026 AVEN Apparel. All rights reserved.</p>
+            </div>
+            <p class="tracking-widest uppercase text-[11px] text-gray-400 font-light">
+                Developed by <span class="text-white font-semibold tracking-wider">TANIM HASAN OVI</span>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = '/api';
+        let authMode = 'login';
+        let toastTimeout;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectParam = urlParams.get('redirect');
+
+        const existingUser = JSON.parse(localStorage.getItem('user'));
+        const existingToken = localStorage.getItem('token');
+        const existingIsAdmin = localStorage.getItem('isAdmin') === 'true';
+
+        if (existingUser && existingToken) {
+            if (existingIsAdmin || existingUser.role === 'admin') {
+                window.location.replace('/admin-orders.html');
+            } else if (redirectParam === 'cart') {
+                window.location.replace('/cart.html');
+            } else {
+                window.location.replace('/profile.html');
+            }
+        }
+
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast-modal');
+            const title = document.getElementById('toast-title');
+            const msg = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+
+            msg.innerText = message;
+
+            if (type === 'error') {
+                title.innerText = 'Notice';
+                icon.innerHTML = `<svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+            } else {
+                title.innerText = 'Success';
+                icon.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+            }
+
+            toast.classList.remove('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(hideToast, 3500);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast-modal');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
+        }
+
+        function clearAuthInputs() {
+            document.getElementById('auth-name').value = '';
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+            document.getElementById('auth-confirm-password').value = '';
+        }
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            clearAuthInputs();
+
+            const passwordInput = document.getElementById('auth-password');
+
+            document.getElementById('tab-login-btn').className = mode === 'login'
+                ? 'flex-1 py-2.5 font-bold border-b-2 border-black text-black transition'
+                : 'flex-1 py-2.5 font-medium text-gray-400 hover:text-black transition';
+            document.getElementById('tab-reg-btn').className = mode === 'register'
+                ? 'flex-1 py-2.5 font-bold border-b-2 border-black text-black transition'
+                : 'flex-1 py-2.5 font-medium text-gray-400 hover:text-black transition';
+
+            document.getElementById('reg-name-field').classList.toggle('hidden', mode !== 'register');
+            document.getElementById('reg-confirm-password-field').classList.toggle('hidden', mode !== 'register');
+
+            if (mode === 'register') {
+                passwordInput.setAttribute('autocomplete', 'new-password');
+            } else {
+                passwordInput.setAttribute('autocomplete', 'current-password');
+            }
+
+            document.getElementById('auth-header-title').innerText = mode === 'login' ? 'Welcome Back' : 'Create Account';
+            document.getElementById('auth-header-subtitle').innerText = mode === 'login'
+                ? 'Sign in with Google or your email credentials.'
+                : 'Sign up in seconds to start ordering exclusive collections.';
+            document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Login' : 'Create Account';
+        }
+
+        function handleAuthSuccess(user, token, isAdmin) {
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('token', token);
+            localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+            showToast('Authentication successful!', 'success');
+
+            setTimeout(() => {
+                if (isAdmin || user.role === 'admin') {
+                    localStorage.removeItem('aven_cart');
+                    localStorage.removeItem('cart');
+                    window.location.replace('/admin-orders.html');
+                    return;
+                }
+
+                if (redirectParam === 'cart') {
+                    window.location.replace('/cart.html');
+                } else {
+                    window.location.replace('/profile.html');
+                }
+            }, 500);
+        }
+
+        window.onload = async function () {
+            try {
+                const res = await fetch(`${API_BASE}/config/google-client-id`);
+                const data = await res.json();
+
+                if (data.clientId && typeof google !== 'undefined') {
+                    google.accounts.id.initialize({
+                        client_id: data.clientId,
+                        callback: handleGoogleResponse
+                    });
+
+                    google.accounts.id.renderButton(
+                        document.getElementById("google-btn-container"),
+                        {
+                            theme: "outline",
+                            size: "large",
+                            shape: "rectangular",
+                            text: "continue_with",
+                            width: 320
+                        }
+                    );
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        async function handleGoogleResponse(response) {
+            try {
+                const res = await fetch(`${API_BASE}/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    handleAuthSuccess(data.user, data.token, data.isAdmin);
+                } else {
+                    showToast(data.message || 'Google Authentication failed', 'error');
+                }
+            } catch (e) {
+                showToast('Server connection error during Google login', 'error');
+            }
+        }
+
+        async function submitAuthForm(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (authMode === 'register') {
+                const name = document.getElementById('auth-name').value.trim();
+                const confirmPassword = document.getElementById('auth-confirm-password').value;
+
+                if (!name) {
+                    showToast('Please enter your full name.', 'error');
+                    return false;
+                }
+
+                if (password.length < 6) {
+                    showToast('Password must be at least 6 characters long.', 'error');
+                    return false;
+                }
+
+                if (password !== confirmPassword) {
+                    showToast('Passwords do not match! Please re-enter.', 'error');
+                    return false;
+                }
+            }
+
+            const btn = document.getElementById('auth-submit-btn');
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+
+            const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
+            const payload = { email, password };
+
+            if (authMode === 'register') {
+                payload.name = document.getElementById('auth-name').value.trim();
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    handleAuthSuccess(data.user, data.token, data.isAdmin);
+                } else {
+                    showToast(data.message || 'Authentication error', 'error');
+                }
+            } catch (err) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = authMode === 'login' ? 'Login' : 'Create Account';
+            }
+
+            return false;
+        }
+    </script>
+</body>
+
+</html>
