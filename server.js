@@ -33,42 +33,37 @@ const connectDB = async () => {
         return;
     }
     if (!MONGO_URI) {
-        console.error('MONGO_URI environment variable is missing.');
+        console.error('MONGO_URI is missing in environment variables.');
         return;
     }
     try {
         const db = await mongoose.connect(MONGO_URI, {
-            bufferCommands: false,
-            serverSelectionTimeoutMS: 5000,
+            serverSelectionTimeoutMS: 5000
         });
         cachedDb = db;
         console.log('MongoDB connected successfully');
     } catch (err) {
-        console.error('Database connection error:', err);
+        console.error('Database connection error:', err.message);
     }
 };
 
-// Ensure DB connected before processing API requests
-app.use(async (req, res, next) => {
+// Ensure DB is connected for all API requests
+app.use('/api', async (req, res, next) => {
     try {
         await connectDB();
     } catch (e) {
-        console.error(e);
+        console.error('API DB Connection Error:', e);
     }
     next();
 });
 
-// Disable 304 Caching for all API routes
+// Disable caching for dynamic API responses
 app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
     next();
 });
-
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Cloudinary Configuration
 cloudinary.config({
@@ -77,7 +72,7 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET || 'tEw1-moCYMihcJhgFT_aioWNJrg'
 });
 
-// Cloudinary Multer Storage
+// Cloudinary Multer Storage Engine
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -87,14 +82,13 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-// Single Image Upload Route
+// Image Upload Route
 app.post('/api/upload', upload.single('image'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
-        const imageUrl = req.file.path;
-        res.status(200).json({ imageUrl });
+        res.status(200).json({ imageUrl: req.file.path });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -120,7 +114,7 @@ app.get('/api/orders/all', authenticate, authorizeAdmin, orderCtrl.getAllOrders)
 app.put('/api/orders/:id/status', authenticate, authorizeAdmin, orderCtrl.updateOrderStatus);
 app.patch('/api/orders/:orderId/cancel', authenticate, orderCtrl.cancelUserOrder);
 
-// Optional Auth Middleware (Allows both logged-in and guest users)
+// Optional Auth Middleware
 const optionalAuth = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -146,17 +140,16 @@ app.patch('/api/cart/:reservationId', optionalAuth, cartCtrl.updateCartItem);
 app.delete('/api/cart/:reservationId', optionalAuth, cartCtrl.removeFromCart);
 app.delete('/api/cart/clear-all', optionalAuth, cartCtrl.clearAllCart);
 
-// Public Config Route for Frontend
+// Public Config
 app.get('/api/config/google-client-id', (req, res) => {
     res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
 });
 
-// Frontend Fallback Route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Static files for local development
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Local Development Server Listener
+// Local development server listener
 const PORT = process.env.PORT || 8000;
 if (process.env.NODE_ENV !== 'production') {
     connectDB().then(() => {
