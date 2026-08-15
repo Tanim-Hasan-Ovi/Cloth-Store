@@ -1,53 +1,42 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Admin = require('../models/Admin');
 
-exports.protect = async (req, res, next) => {
+// Authenticate / Protect Middleware
+const authenticate = async (req, res, next) => {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-    }
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
 
-    if (!token) {
-        return res.status(401).json({ message: 'Not authorized, token missing' });
-    }
+            const user = await User.findById(decoded.id || decoded._id).select('-password');
+            if (!user) {
+                return res.status(401).json({ message: 'User not found' });
+            }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
-
-        let account = null;
-        let isAdmin = decoded.isAdmin || decoded.role === 'admin';
-
-        if (isAdmin) {
-            account = await Admin.findById(decoded.id).select('-password');
+            req.user = user;
+            req.isAdmin = user.role === 'admin' || user.isAdmin === true;
+            next();
+        } catch (error) {
+            return res.status(401).json({ message: 'Not authorized, token failed' });
         }
-
-        if (!account) {
-            account = await User.findById(decoded.id).select('-password');
-            if (account) isAdmin = false;
-        }
-
-        if (!account) {
-            return res.status(401).json({ message: 'Account not found' });
-        }
-
-        req.user = account;
-        req.isAdmin = isAdmin;
-        req.user.role = isAdmin ? 'admin' : 'customer';
-        next();
-    } catch (error) {
-        return res.status(401).json({ message: 'Token invalid or expired' });
+    } else {
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
-exports.authenticate = exports.protect;
-
-exports.adminOnly = (req, res, next) => {
-    if (req.isAdmin || (req.user && req.user.role === 'admin')) {
+// Authorize Admin Middleware
+const authorizeAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.isAdmin === true)) {
         next();
     } else {
-        res.status(403).json({ message: 'Access denied. Admins only.' });
+        res.status(403).json({ message: 'Access denied: Admin only' });
     }
 };
 
-exports.authorizeAdmin = exports.adminOnly;
+module.exports = {
+    authenticate,
+    protect: authenticate,
+    authorizeAdmin,
+    adminOnly: authorizeAdmin
+};
