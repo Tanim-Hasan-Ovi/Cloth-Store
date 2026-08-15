@@ -12,19 +12,19 @@ const authenticate = async (req, res, next) => {
 
             let account = null;
 
-            // 1. Try finding in Admin collection
+            // 1. Check Admin model
             if (Admin) {
                 try {
                     account = await Admin.findById(targetId).select('-password');
                     if (account) {
                         account = account.toObject ? account.toObject() : account;
-                        account.isAdmin = true;
                         account.role = 'admin';
+                        account.isAdmin = true;
                     }
                 } catch (e) { }
             }
 
-            // 2. If not found in Admin, try User collection
+            // 2. Check User model
             if (!account && User) {
                 try {
                     const u = await User.findById(targetId).select('-password');
@@ -34,31 +34,31 @@ const authenticate = async (req, res, next) => {
                 } catch (e) { }
             }
 
-            // 3. Fallback to token payload if DB lookup is delayed
+            // 3. Fallback to decoded token payload
             if (!account) {
                 account = {
                     _id: targetId,
                     id: targetId,
                     role: decoded.role || 'user',
-                    isAdmin: decoded.isAdmin || decoded.role === 'admin',
-                    name: decoded.name || 'User'
+                    isAdmin: decoded.isAdmin || false,
+                    email: decoded.email
                 };
             }
 
-            // Normalize Admin Flags
-            const isUserAdmin = Boolean(
-                (account.role && account.role.toString().toLowerCase() === 'admin') ||
+            // Determine admin status across all common keys
+            const isAdmin = Boolean(
                 account.isAdmin === true ||
                 account.isAdmin === 'true' ||
-                (decoded.role && decoded.role.toString().toLowerCase() === 'admin') ||
-                decoded.isAdmin === true
+                (account.role && account.role.toString().toLowerCase() === 'admin') ||
+                decoded.isAdmin === true ||
+                (decoded.role && decoded.role.toString().toLowerCase() === 'admin')
             );
 
-            account.isAdmin = isUserAdmin;
-            if (isUserAdmin) account.role = 'admin';
+            account.isAdmin = isAdmin;
+            if (isAdmin) account.role = 'admin';
 
             req.user = account;
-            req.isAdmin = isUserAdmin;
+            req.isAdmin = isAdmin;
             next();
         } catch (error) {
             return res.status(401).json({ message: 'Not authorized, token failed' });
@@ -69,19 +69,23 @@ const authenticate = async (req, res, next) => {
 };
 
 const authorizeAdmin = (req, res, next) => {
-    const isAdmin = Boolean(
-        req.isAdmin ||
+    const isUserAdmin = Boolean(
+        req.isAdmin === true ||
         (req.user && (
-            (req.user.role && req.user.role.toString().toLowerCase() === 'admin') ||
             req.user.isAdmin === true ||
-            req.user.isAdmin === 'true'
+            req.user.isAdmin === 'true' ||
+            (req.user.role && req.user.role.toString().toLowerCase() === 'admin')
         ))
     );
 
-    if (isAdmin) {
+    if (isUserAdmin) {
         return next();
     }
-    return res.status(403).json({ message: 'Access denied: Admin only' });
+
+    return res.status(403).json({
+        message: 'Access denied: Admin only',
+        currentRole: req.user?.role || 'unknown'
+    });
 };
 
 module.exports = {
