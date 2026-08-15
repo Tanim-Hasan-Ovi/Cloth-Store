@@ -126,6 +126,8 @@
                         class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition">Shipped</button>
                     <button onclick="setStatusFilter('Delivered')"
                         class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition">Delivered</button>
+                    <button onclick="setStatusFilter('Cancelled')"
+                        class="filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 transition">Cancelled</button>
                 </div>
             </div>
         </div>
@@ -173,20 +175,21 @@
         }
 
         function getStatusPill(status) {
-            switch (status) {
-                case 'Processing':
+            const normalized = (status || 'Pending').toLowerCase();
+            switch (normalized) {
+                case 'processing':
                     return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
                         <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-amber-500 animate-pulse"></span> In Processing
                     </span>`;
-                case 'Shipped':
+                case 'shipped':
                     return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
                         <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-blue-500"></span> Shipped to Courier
                     </span>`;
-                case 'Delivered':
+                case 'delivered':
                     return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500"></span> Delivered
                     </span>`;
-                case 'Cancelled':
+                case 'cancelled':
                     return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
                         <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-rose-500"></span> Cancelled
                     </span>`;
@@ -200,19 +203,33 @@
         function setStatusFilter(status) {
             activeStatusFilter = status;
             document.querySelectorAll('#filter-tabs button').forEach(btn => {
-                const isMatch = (status === 'ALL' && btn.innerText === 'ALL') || btn.innerText.toUpperCase() === status.toUpperCase();
-                btn.className = isMatch
-                    ? 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-semibold bg-black text-white transition'
-                    : 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition';
+                const btnStatus = btn.innerText.trim();
+                const isMatch = (status.toUpperCase() === 'ALL' && btnStatus.toUpperCase() === 'ALL') || btnStatus.toUpperCase() === status.toUpperCase();
+
+                if (isMatch) {
+                    btn.className = (status.toUpperCase() === 'CANCELLED')
+                        ? 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-semibold bg-rose-600 text-white transition'
+                        : 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-semibold bg-black text-white transition';
+                } else {
+                    btn.className = (btnStatus.toUpperCase() === 'CANCELLED')
+                        ? 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-rose-600 hover:text-rose-700 border border-rose-200 hover:border-rose-300 transition'
+                        : 'filter-btn text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-sm font-medium text-gray-600 hover:text-black border border-gray-200 transition';
+                }
             });
             filterAndRenderOrders();
         }
 
         function updateStats(orders) {
+            const validOrders = orders.filter(o => (o.status || '').toLowerCase() !== 'cancelled');
             const totalOrders = orders.length;
-            const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-            const pendingCount = orders.filter(o => !o.status || o.status === 'Pending' || o.status === 'Processing').length;
-            const deliveredCount = orders.filter(o => o.status === 'Delivered').length;
+            const totalRevenue = validOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+            const pendingCount = orders.filter(o => {
+                const s = (o.status || 'Pending').toLowerCase();
+                return s === 'pending' || s === 'processing';
+            }).length;
+
+            const deliveredCount = orders.filter(o => (o.status || '').toLowerCase() === 'delivered').length;
 
             document.getElementById('stat-total-orders').innerText = totalOrders;
             document.getElementById('stat-total-rev').innerText = `৳ ${totalRevenue.toLocaleString()}`;
@@ -225,7 +242,8 @@
             const container = document.getElementById('orders-container');
 
             let filtered = allOrdersData.filter(order => {
-                const matchesStatus = activeStatusFilter === 'ALL' || (order.status || 'Pending').toUpperCase() === activeStatusFilter.toUpperCase();
+                const orderStatus = (order.status || 'Pending').toLowerCase();
+                const matchesStatus = (activeStatusFilter === 'ALL') || (orderStatus === activeStatusFilter.toLowerCase());
 
                 const cust = order.customer || order.user || {};
                 const name = (cust.name || '').toLowerCase();
@@ -279,7 +297,7 @@
 
                 const addr = order.shippingAddress || cust.address || {};
                 const fullAddress = [addr.street, addr.city, addr.postalCode, addr.country].filter(Boolean).join(', ') || 'No shipping address provided';
-                const currentStatus = order.status || 'Pending';
+                const currentStatus = (order.status || 'Pending').toLowerCase();
 
                 return `
                     <div class="bg-white border border-gray-200 rounded-sm shadow-sm hover:border-gray-300 transition duration-200 overflow-hidden">
@@ -300,11 +318,11 @@
                                 <label class="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">Status:</label>
                                 <select onchange="updateOrderStatus('${order._id}', this.value)" 
                                     class="text-xs font-medium border border-gray-300 bg-white px-3 py-1.5 rounded-sm focus:outline-none focus:ring-1 focus:ring-black cursor-pointer shadow-sm">
-                                    <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
-                                    <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>In Processing</option>
-                                    <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped to Courier</option>
-                                    <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                                    <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                    <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="processing" ${currentStatus === 'processing' ? 'selected' : ''}>In Processing</option>
+                                    <option value="shipped" ${currentStatus === 'shipped' ? 'selected' : ''}>Shipped to Courier</option>
+                                    <option value="delivered" ${currentStatus === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                                 </select>
                             </div>
                         </div>
@@ -343,7 +361,7 @@
 
                                 <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-baseline">
                                     <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Bill</span>
-                                    <span class="text-lg font-bold text-black">৳ ${order.totalAmount || 0}</span>
+                                    <span class="text-lg font-bold text-black">৳ ${(order.totalAmount || 0).toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -383,10 +401,11 @@
         async function loadOrders() {
             const container = document.getElementById('orders-container');
             try {
-                const res = await fetch(`${API_BASE}/orders/all`, {
+                const res = await fetch(`${API_BASE}/orders/all?t=${Date.now()}`, {
                     headers: {
                         'Authorization': `Bearer ${currentToken}`
-                    }
+                    },
+                    cache: 'no-store'
                 });
 
                 if (!res.ok) throw new Error('Failed to fetch orders (Status: ' + res.status + ')');

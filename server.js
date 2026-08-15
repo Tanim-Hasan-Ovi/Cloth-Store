@@ -3,13 +3,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
-const jwt = require('jsonwebtoken'); // Added missing jwt
+const jwt = require('jsonwebtoken');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 // Middlewares
 const authMiddleware = require('./middleware/auth');
-// Handle both naming styles (protect/authenticate and adminOnly/authorizeAdmin)
 const authenticate = authMiddleware.authenticate || authMiddleware.protect;
 const authorizeAdmin = authMiddleware.authorizeAdmin || authMiddleware.adminOnly;
 
@@ -20,38 +20,50 @@ const orderCtrl = require('./controllers/orderController');
 const cartCtrl = require('./controllers/cartController');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// Serve static frontend files and uploaded images
+// Disable 304 Caching for all API routes
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+});
+
+// Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Ensure uploads folder exists
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
+// Cloudinary Configuration
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dizzoonz',
+    api_key: process.env.CLOUDINARY_API_KEY || '178845322488663',
+    api_secret: process.env.CLOUDINARY_API_SECRET || 'tEw1-moCYMihcJhgFT_aioWNJrg'
+});
 
-// Multer Storage Configuration
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+// Cloudinary Multer Storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'aven-products',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'svg']
     }
 });
 const upload = multer({ storage: storage });
 
 // Single Image Upload Route
 app.post('/api/upload', upload.single('image'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        const imageUrl = req.file.path;
+        res.status(200).json({ imageUrl });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.status(200).json({ imageUrl });
 });
 
 // Authentication Routes
@@ -72,6 +84,7 @@ app.post('/api/orders', authenticate, orderCtrl.createOrder);
 app.get('/api/orders/my-orders', authenticate, orderCtrl.getCustomerOrders);
 app.get('/api/orders/all', authenticate, authorizeAdmin, orderCtrl.getAllOrders);
 app.put('/api/orders/:id/status', authenticate, authorizeAdmin, orderCtrl.updateOrderStatus);
+app.patch('/api/orders/:orderId/cancel', authenticate, orderCtrl.cancelUserOrder);
 
 // Optional Auth Middleware (Allows both logged-in and guest users)
 const optionalAuth = (req, res, next) => {
@@ -95,36 +108,19 @@ const optionalAuth = (req, res, next) => {
 // Cart Routes
 app.get('/api/cart', optionalAuth, cartCtrl.getUserCart);
 app.post('/api/cart/add', optionalAuth, cartCtrl.addToCart);
-app.patch('/api/cart/:reservationId', optionalAuth, cartCtrl.updateCartItem); // Ensure this line exists
+app.patch('/api/cart/:reservationId', optionalAuth, cartCtrl.updateCartItem);
 app.delete('/api/cart/:reservationId', optionalAuth, cartCtrl.removeFromCart);
 app.delete('/api/cart/clear-all', optionalAuth, cartCtrl.clearAllCart);
-
-// Frontend Fallback Route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 // Public Config Route for Frontend
 app.get('/api/config/google-client-id', (req, res) => {
     res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
 });
 
-app.delete('/api/cart/clear-all', authenticate, cartCtrl.clearAllCart);
-
-
-app.patch('/api/cart/:reservationId', optionalAuth, cartCtrl.updateCartItem);
-
-app.patch('/api/orders/:orderId/cancel', authenticate, orderCtrl.cancelUserOrder);
-
-
-// Disable 304 Caching for all API routes
-app.use('/api', (req, res, next) => {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    next();
+// Frontend Fallback Route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 
 // Database Connection & Server Start
 const PORT = process.env.PORT || 8000;
@@ -133,6 +129,10 @@ const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('MongoDB connected successfully');
-        app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+        if (process.env.NODE_ENV !== 'production') {
+            app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+        }
     })
     .catch((err) => console.error('Database connection error:', err));
+
+module.exports = app;
