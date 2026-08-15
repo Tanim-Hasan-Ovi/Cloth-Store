@@ -33,10 +33,12 @@ const connectDB = async () => {
         return;
     }
     if (!MONGO_URI) {
-        throw new Error('MONGO_URI environment variable is missing.');
+        console.error('MONGO_URI environment variable is missing.');
+        return;
     }
     try {
         const db = await mongoose.connect(MONGO_URI, {
+            bufferCommands: false,
             serverSelectionTimeoutMS: 5000,
         });
         cachedDb = db;
@@ -46,8 +48,13 @@ const connectDB = async () => {
     }
 };
 
+// Ensure DB connected before processing API requests
 app.use(async (req, res, next) => {
-    await connectDB();
+    try {
+        await connectDB();
+    } catch (e) {
+        console.error(e);
+    }
     next();
 });
 
@@ -149,54 +156,12 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Database Connection & Server Start (Local Environment)
+// Local Development Server Listener
 const PORT = process.env.PORT || 8000;
-
 if (process.env.NODE_ENV !== 'production') {
     connectDB().then(() => {
         app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
     });
 }
-
-// Database Connection for Serverless
-const MONGO_URI = process.env.MONGO_URI;
-let cachedDb = null;
-
-const connectDB = async () => {
-    if (cachedDb && mongoose.connection.readyState === 1) {
-        return;
-    }
-    if (!MONGO_URI) {
-        console.error('MONGO_URI is missing!');
-        return;
-    }
-    try {
-        const db = await mongoose.connect(MONGO_URI, {
-            bufferCommands: false,
-            serverSelectionTimeoutMS: 5000,
-        });
-        cachedDb = db;
-    } catch (err) {
-        console.error('MongoDB connection error:', err);
-    }
-};
-
-// Ensure DB connected before processing API requests
-app.use(async (req, res, next) => {
-    try {
-        await connectDB();
-    } catch (e) {
-        console.error(e);
-    }
-    next();
-});
-
-// For local development only
-if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 8000;
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-}
-
-module.exports = app;
 
 module.exports = app;
