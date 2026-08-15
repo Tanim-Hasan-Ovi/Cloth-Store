@@ -24,6 +24,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serverless MongoDB Connection Handler
+const MONGO_URI = process.env.MONGO_URI;
+let cachedDb = null;
+
+const connectDB = async () => {
+    if (cachedDb && mongoose.connection.readyState === 1) {
+        return;
+    }
+    if (!MONGO_URI) {
+        throw new Error('MONGO_URI environment variable is missing.');
+    }
+    try {
+        const db = await mongoose.connect(MONGO_URI, {
+            serverSelectionTimeoutMS: 5000,
+        });
+        cachedDb = db;
+        console.log('MongoDB connected successfully');
+    } catch (err) {
+        console.error('Database connection error:', err);
+    }
+};
+
+app.use(async (req, res, next) => {
+    await connectDB();
+    next();
+});
+
 // Disable 304 Caching for all API routes
 app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -122,17 +149,13 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Database Connection & Server Start
+// Database Connection & Server Start (Local Environment)
 const PORT = process.env.PORT || 8000;
-const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI)
-    .then(() => {
-        console.log('MongoDB connected successfully');
-        if (process.env.NODE_ENV !== 'production') {
-            app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-        }
-    })
-    .catch((err) => console.error('Database connection error:', err));
+if (process.env.NODE_ENV !== 'production') {
+    connectDB().then(() => {
+        app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+    });
+}
 
 module.exports = app;

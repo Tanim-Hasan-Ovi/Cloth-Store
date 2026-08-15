@@ -21,7 +21,6 @@ const cleanupExpiredReservations = async () => {
     }
 };
 
-setInterval(cleanupExpiredReservations, 60 * 1000);
 
 exports.getUserCart = async (req, res) => {
     try {
