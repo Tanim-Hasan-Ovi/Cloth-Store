@@ -480,9 +480,9 @@
                 return `
                     <div class="group flex flex-col justify-between">
                       <div>
-                          <div onclick="openImagePreview('${p._id}')" class="bg-gray-100 aspect-[3/4] flex items-center justify-center mb-3 relative overflow-hidden cursor-pointer">
+                          <div onclick="openImagePreview('${p._id}')" class="bg-gray-100 aspect-[2/3] flex items-center justify-center mb-3 relative overflow-hidden cursor-pointer">
                              <img src="${p.image || '/uploads/default.png'}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                             <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold text-black">${p.category}</span>
+                             <span class="absolute top-2 right-2 bg-white/90 px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold text-black">${p.category}</span>
                              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                                 <span class="bg-white text-black text-[11px] font-semibold uppercase tracking-widest px-3 py-1.5 shadow">Select Options</span>
                              </div>
