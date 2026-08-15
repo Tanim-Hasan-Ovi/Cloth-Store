@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 
-// Authenticate Middleware (Supports both User & Admin accounts)
 const authenticate = async (req, res, next) => {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -11,36 +10,55 @@ const authenticate = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
             const targetId = decoded.id || decoded._id || decoded.userId;
 
-            // 1. Try finding in Admin collection
             let account = null;
-            try {
-                account = await Admin.findById(targetId).select('-password');
-            } catch (e) { }
 
-            // 2. If not found in Admin, try User collection
-            if (!account) {
+            // 1. Try finding in Admin collection
+            if (Admin) {
                 try {
-                    account = await User.findById(targetId).select('-password');
+                    account = await Admin.findById(targetId).select('-password');
+                    if (account) {
+                        account = account.toObject ? account.toObject() : account;
+                        account.isAdmin = true;
+                        account.role = 'admin';
+                    }
                 } catch (e) { }
             }
 
-            // 3. If still not found, construct fallback admin from token payload
-            if (!account && (decoded.role === 'admin' || decoded.isAdmin)) {
+            // 2. If not found in Admin, try User collection
+            if (!account && User) {
+                try {
+                    const u = await User.findById(targetId).select('-password');
+                    if (u) {
+                        account = u.toObject ? u.toObject() : u;
+                    }
+                } catch (e) { }
+            }
+
+            // 3. Fallback to token payload if DB lookup is delayed
+            if (!account) {
                 account = {
                     _id: targetId,
                     id: targetId,
-                    role: 'admin',
-                    isAdmin: true,
-                    name: decoded.name || 'Admin'
+                    role: decoded.role || 'user',
+                    isAdmin: decoded.isAdmin || decoded.role === 'admin',
+                    name: decoded.name || 'User'
                 };
             }
 
-            if (!account) {
-                return res.status(401).json({ message: 'User not found' });
-            }
+            // Normalize Admin Flags
+            const isUserAdmin = Boolean(
+                (account.role && account.role.toString().toLowerCase() === 'admin') ||
+                account.isAdmin === true ||
+                account.isAdmin === 'true' ||
+                (decoded.role && decoded.role.toString().toLowerCase() === 'admin') ||
+                decoded.isAdmin === true
+            );
+
+            account.isAdmin = isUserAdmin;
+            if (isUserAdmin) account.role = 'admin';
 
             req.user = account;
-            req.isAdmin = account.role === 'admin' || account.isAdmin === true;
+            req.isAdmin = isUserAdmin;
             next();
         } catch (error) {
             return res.status(401).json({ message: 'Not authorized, token failed' });
@@ -50,13 +68,20 @@ const authenticate = async (req, res, next) => {
     }
 };
 
-// Authorize Admin Middleware
 const authorizeAdmin = (req, res, next) => {
-    if (req.user && (req.user.role === 'admin' || req.user.isAdmin === true || req.isAdmin)) {
-        next();
-    } else {
-        res.status(403).json({ message: 'Access denied: Admin only' });
+    const isAdmin = Boolean(
+        req.isAdmin ||
+        (req.user && (
+            (req.user.role && req.user.role.toString().toLowerCase() === 'admin') ||
+            req.user.isAdmin === true ||
+            req.user.isAdmin === 'true'
+        ))
+    );
+
+    if (isAdmin) {
+        return next();
     }
+    return res.status(403).json({ message: 'Access denied: Admin only' });
 };
 
 module.exports = {
