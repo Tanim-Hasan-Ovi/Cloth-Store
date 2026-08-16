@@ -12,7 +12,10 @@ const userSchema = new mongoose.Schema({
         city: { type: String, default: '' },
         postalCode: { type: String, default: '' },
         country: { type: String, default: '' }
-    }
+    },
+    // Forgot Password Features
+    resetPasswordToken: { type: String, default: undefined },
+    resetPasswordExpire: { type: Date, default: undefined }
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
