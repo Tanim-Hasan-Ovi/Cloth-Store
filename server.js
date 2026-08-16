@@ -84,8 +84,8 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-// Image Upload Route
-app.post('/api/upload', upload.single('image'), (req, res) => {
+// Image Upload Route (Protected)
+app.post('/api/upload', authenticate, authorizeAdmin, upload.single('image'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
@@ -99,12 +99,12 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 // Auth Routes Mount
 app.use('/api/auth', authRoutes);
 
-// Product Routes
+// Product Routes (Protected with Admin Auth)
 app.get('/api/products', prodCtrl.getProducts);
-app.post('/api/products', prodCtrl.createProduct);
-app.put('/api/products/:id', prodCtrl.updateProduct);
-app.delete('/api/products/:id', prodCtrl.deleteProduct);
-app.patch('/api/products/:productId/stock', prodCtrl.updateVariantStock);
+app.post('/api/products', authenticate, authorizeAdmin, prodCtrl.createProduct);
+app.put('/api/products/:id', authenticate, authorizeAdmin, prodCtrl.updateProduct);
+app.delete('/api/products/:id', authenticate, authorizeAdmin, prodCtrl.deleteProduct);
+app.patch('/api/products/:productId/stock', authenticate, authorizeAdmin, prodCtrl.updateVariantStock);
 
 // Order Routes
 app.post('/api/orders', authenticate, orderCtrl.createOrder);

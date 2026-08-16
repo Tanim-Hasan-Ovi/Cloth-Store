@@ -24,6 +24,10 @@ exports.getProducts = async (req, res) => {
 
 // Admin: Create product with Image
 exports.createProduct = async (req, res) => {
+    if (req.user && req.user.email === 'admin@aven.com') {
+        return res.status(403).json({ message: 'Demo Admin is read-only. Creating products is disabled.' });
+    }
+
     try {
         const { title, description, price, category, image, variants } = req.body;
         const product = await Product.create({
@@ -42,6 +46,10 @@ exports.createProduct = async (req, res) => {
 
 // Admin: Edit / Update complete product
 exports.updateProduct = async (req, res) => {
+    if (req.user && req.user.email === 'admin@aven.com') {
+        return res.status(403).json({ message: 'Demo Admin is read-only. Editing products is disabled.' });
+    }
+
     try {
         const { id } = req.params;
         const { title, description, price, category, image, variants } = req.body;
@@ -64,6 +72,10 @@ exports.updateProduct = async (req, res) => {
 
 // Admin: Delete Product
 exports.deleteProduct = async (req, res) => {
+    if (req.user && req.user.email === 'admin@aven.com') {
+        return res.status(403).json({ message: 'Demo Admin is read-only. Deleting products is disabled.' });
+    }
+
     try {
         const { id } = req.params;
         const deletedProduct = await Product.findByIdAndDelete(id);
@@ -78,6 +90,10 @@ exports.deleteProduct = async (req, res) => {
 
 // Admin: Update Stock Only
 exports.updateVariantStock = async (req, res) => {
+    if (req.user && req.user.email === 'admin@aven.com') {
+        return res.status(403).json({ message: 'Demo Admin is read-only. Modifying stock is disabled.' });
+    }
+
     try {
         const { productId } = req.params;
         const { size, quantity } = req.body;

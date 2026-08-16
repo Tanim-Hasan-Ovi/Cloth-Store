@@ -41,8 +41,15 @@ const authenticate = async (req, res, next) => {
                     id: targetId,
                     role: decoded.role || 'user',
                     isAdmin: decoded.isAdmin || false,
-                    email: decoded.email
+                    email: decoded.email ? decoded.email.toLowerCase() : ''
                 };
+            }
+
+            // Ensure email is always present and clean
+            if (!account.email && decoded.email) {
+                account.email = decoded.email.toLowerCase();
+            } else if (account.email) {
+                account.email = account.email.toLowerCase();
             }
 
             // Determine admin status across all common keys

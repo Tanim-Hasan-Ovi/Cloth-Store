@@ -104,6 +104,14 @@
                 </button>
             </form>
 
+            <!-- Demo Admin Quick Access Button (Inside Card) -->
+            <div id="demo-admin-container" class="mt-5 pt-4 border-t border-gray-100 text-center">
+                <button type="button" onclick="fillDemoAdmin()"
+                    class="text-[11px] uppercase tracking-wider text-gray-400 hover:text-black hover:underline transition font-medium">
+                    ⚡ Fill Demo Admin Access
+                </button>
+            </div>
+
         </div>
     </main>
 
@@ -198,6 +206,7 @@
 
             const passwordInput = document.getElementById('auth-password');
             const forgotPassLink = document.getElementById('forgot-password-link');
+            const demoAdminContainer = document.getElementById('demo-admin-container');
 
             document.getElementById('tab-login-btn').className = mode === 'login'
                 ? 'flex-1 py-2.5 font-bold border-b-2 border-black text-black transition'
@@ -211,6 +220,10 @@
 
             if (forgotPassLink) {
                 forgotPassLink.classList.toggle('hidden', mode !== 'login');
+            }
+
+            if (demoAdminContainer) {
+                demoAdminContainer.classList.toggle('hidden', mode !== 'login');
             }
 
             if (mode === 'register') {
@@ -355,6 +368,13 @@
             }
 
             return false;
+        }
+
+        function fillDemoAdmin() {
+            switchAuthMode('login');
+            document.getElementById('auth-email').value = 'admin@aven.com';
+            document.getElementById('auth-password').value = 'admin1234';
+            showToast('Demo Admin credentials filled!', 'success');
         }
     </script>
 </body>
