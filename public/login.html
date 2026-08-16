@@ -78,8 +78,13 @@
                 </div>
 
                 <div>
-                    <label
-                        class="block text-[11px] uppercase tracking-wider text-gray-500 mb-1 font-medium">Password</label>
+                    <div class="flex justify-between items-center mb-1">
+                        <label
+                            class="block text-[11px] uppercase tracking-wider text-gray-500 font-medium">Password</label>
+                        <a href="/reset-password.html" id="forgot-password-link"
+                            class="text-[11px] text-gray-400 hover:text-black hover:underline transition font-normal">Forgot
+                            Password?</a>
+                    </div>
                     <input type="password" id="auth-password" name="password" placeholder="••••••••" required
                         autocomplete="current-password"
                         class="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-black rounded-sm">
@@ -192,6 +197,7 @@
             clearAuthInputs();
 
             const passwordInput = document.getElementById('auth-password');
+            const forgotPassLink = document.getElementById('forgot-password-link');
 
             document.getElementById('tab-login-btn').className = mode === 'login'
                 ? 'flex-1 py-2.5 font-bold border-b-2 border-black text-black transition'
@@ -202,6 +208,10 @@
 
             document.getElementById('reg-name-field').classList.toggle('hidden', mode !== 'register');
             document.getElementById('reg-confirm-password-field').classList.toggle('hidden', mode !== 'register');
+
+            if (forgotPassLink) {
+                forgotPassLink.classList.toggle('hidden', mode !== 'login');
+            }
 
             if (mode === 'register') {
                 passwordInput.setAttribute('autocomplete', 'new-password');

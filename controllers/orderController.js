@@ -65,14 +65,15 @@ exports.createOrder = async (req, res) => {
             }
         }
 
-        const order = new Order({
+        const newOrder = new Order({
             customer: req.user._id,
             items: processedItems,
             totalAmount,
             shippingAddress: finalAddress
         });
 
-        await order.save();
+        const savedOrder = await newOrder.save();
+        const finalOrderId = savedOrder._id.toString();
 
         // Send Order Confirmation Email (Non-blocking background process)
         if (req.user && req.user.email) {
@@ -100,7 +101,7 @@ exports.createOrder = async (req, res) => {
                     <div style="padding: 20px 0;">
                         <h2 style="font-size: 18px; color: #16a34a; margin: 0 0 8px 0;">Order Confirmed!</h2>
                         <p style="font-size: 13px; color: #4b5563; line-height: 1.5; margin: 0 0 20px 0;">
-                            Thank you for your order, <strong>${req.user.name || 'Valued Customer'}</strong>. We have received your order (ID: <code>${order._id}</code>) and are preparing it for shipment.
+                            Thank you for your order, <strong>${req.user.name || 'Valued Customer'}</strong>. We have received your order (ID: <code>${finalOrderId}</code>) and are preparing it for shipment.
                         </p>
 
                         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -135,12 +136,12 @@ exports.createOrder = async (req, res) => {
 
             sendEmail({
                 to: req.user.email,
-                subject: `Order Confirmation #${order._id} — AVEN`,
+                subject: `Order Confirmation #${finalOrderId} — AVEN`,
                 html: emailHtml
             }).catch(err => console.error('Order confirmation email failed to send:', err));
         }
 
-        return res.status(201).json(order);
+        return res.status(201).json(savedOrder);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }

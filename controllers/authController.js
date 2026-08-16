@@ -1,14 +1,12 @@
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Admin = require('../models/Admin');
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 const sendEmail = require('../utils/sendEmail');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (account, isAdmin) => {
     return jwt.sign(
@@ -205,6 +203,87 @@ exports.resetPassword = async (req, res) => {
         await user.save();
 
         return res.status(200).json({ message: 'Password reset successful. Please log in.' });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// 1. Send 6-Digit OTP
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email.' });
+        }
+
+        // Generate 6-digit random numeric OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordToken = crypto.createHash('sha256').update(otp).digest('hex');
+        user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // Valid for 10 mins
+        await user.save();
+
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e5e7eb;">
+                <h2 style="letter-spacing: 3px; text-transform: uppercase; margin: 0 0 12px 0;">AVEN</h2>
+                <h3 style="margin-top: 0; color: #111;">Password Reset Code</h3>
+                <p style="color: #666; font-size: 13px; line-height: 1.5;">Your 6-digit verification code to reset your password is:</p>
+                <div style="margin: 20px 0; padding: 14px; background-color: #f3f4f6; text-align: center; border-radius: 4px;">
+                    <span style="font-size: 26px; font-weight: bold; letter-spacing: 6px; color: #000;">${otp}</span>
+                </div>
+                <p style="color: #999; font-size: 12px;">This code is valid for 10 minutes. If you did not make this request, please ignore this email.</p>
+            </div>
+        `;
+
+        await sendEmail({ to: user.email, subject: 'Your Password Reset OTP — AVEN', html });
+        return res.status(200).json({ message: 'OTP sent to email.' });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// 2. Verify OTP
+exports.verifyOtp = async (req, res) => {
+    const { email, otp } = req.body;
+    try {
+        const hashedOtp = crypto.createHash('sha256').update(otp.toString()).digest('hex');
+        const user = await User.findOne({
+            email: email.toLowerCase(),
+            resetPasswordToken: hashedOtp,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP code.' });
+        }
+
+        return res.status(200).json({ message: 'OTP verified successfully.' });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// 3. Reset Password with OTP
+exports.resetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+    try {
+        const hashedOtp = crypto.createHash('sha256').update(otp.toString()).digest('hex');
+        const user = await User.findOne({
+            email: email.toLowerCase(),
+            resetPasswordToken: hashedOtp,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP session.' });
+        }
+
+        user.password = newPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save();
+
+        return res.status(200).json({ message: 'Password updated successfully.' });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }

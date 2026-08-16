@@ -14,10 +14,12 @@ const authenticate = authMiddleware.authenticate || authMiddleware.protect;
 const authorizeAdmin = authMiddleware.authorizeAdmin || authMiddleware.adminOnly;
 
 // Controllers
-const authCtrl = require('./controllers/authController');
 const prodCtrl = require('./controllers/productController');
 const orderCtrl = require('./controllers/orderController');
 const cartCtrl = require('./controllers/cartController');
+
+// Routes
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -94,11 +96,8 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     }
 });
 
-// Authentication Routes
-app.post('/api/auth/register', authCtrl.register);
-app.post('/api/auth/login', authCtrl.login);
-app.post('/api/auth/google', authCtrl.googleAuth);
-app.put('/api/auth/profile', authenticate, authCtrl.updateProfile);
+// Auth Routes Mount
+app.use('/api/auth', authRoutes);
 
 // Product Routes
 app.get('/api/products', prodCtrl.getProducts);
