@@ -26,37 +26,54 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serverless MongoDB Connection Handler
+// Serverless MongoDB Connection Handler (Vercel-Optimized Cache)
 const MONGO_URI = process.env.MONGO_URI;
-let cachedDb = null;
+
+let cached = global.mongoose;
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
+}
 
 const connectDB = async () => {
-    if (cachedDb && mongoose.connection.readyState === 1) {
-        return;
+    if (cached.conn) {
+        return cached.conn;
     }
+
     if (!MONGO_URI) {
         console.error('MONGO_URI is missing in environment variables.');
-        return;
+        return null;
     }
-    try {
-        const db = await mongoose.connect(MONGO_URI, {
+
+    if (!cached.promise) {
+        const opts = {
+            bufferCommands: false,
             serverSelectionTimeoutMS: 5000
+        };
+
+        cached.promise = mongoose.connect(MONGO_URI, opts).then((mongooseInstance) => {
+            return mongooseInstance;
         });
-        cachedDb = db;
-        console.log('MongoDB connected successfully');
-    } catch (err) {
-        console.error('Database connection error:', err.message);
     }
+
+    try {
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null;
+        console.error('Database connection error:', e.message);
+    }
+
+    return cached.conn;
 };
 
 // Ensure DB is connected for all API requests
 app.use('/api', async (req, res, next) => {
     try {
         await connectDB();
+        next();
     } catch (e) {
         console.error('API DB Connection Error:', e);
+        next();
     }
-    next();
 });
 
 // Disable caching for dynamic API responses
